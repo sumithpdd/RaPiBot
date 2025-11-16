@@ -1,0 +1,28 @@
+# Animation Files Directory
+
+Place the following MP4 files here:
+- blink.mp4 (default animation) ← REQUIRED
+- yellow.mp4 (CO2 warning 500-750 ppm)
+- red.mp4 (CO2 alert 750-1500 ppm)
+- black.mp4 (low light < 10)
+- speaking.mp4 (TTS active - when bot is speaking) ← REQUIRED for voice
+
+Download from: https://github.com/CodersCafeTech/PomodoroBot/tree/main/Code/animations
+
+**IMPORTANT**: 
+- speaking.mp4 MUST exist for voice assistant to work properly
+- blink.mp4 MUST exist as the default/fallback animation
+- You can use any animated MP4 file for testing
+- Videos should be H.264 encoded, 1080p or lower
+- Keep videos short (2-10 seconds) as they will loop
+
+**Quick Test Setup**:
+If you don't have the original videos, you can:
+1. Copy the same video 5 times and rename them
+2. Or use ffmpeg to create simple colored videos:
+
+ffmpeg -f lavfi -i color=c=blue:s=1280x720:d=3 blink.mp4
+ffmpeg -f lavfi -i color=c=yellow:s=1280x720:d=3 yellow.mp4
+ffmpeg -f lavfi -i color=c=red:s=1280x720:d=3 red.mp4
+ffmpeg -f lavfi -i color=c=black:s=1280x720:d=3 black.mp4
+ffmpeg -f lavfi -i color=c=green:s=1280x720:d=3 speaking.mp4
