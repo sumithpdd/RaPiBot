@@ -7,108 +7,566 @@ Complete guide to deploy your DevFest London 2025 Photo Booth to Raspberry Pi us
 ## 📋 What You Need
 
 ### Hardware
-- **Raspberry Pi 4 Model B** (4GB RAM recommended, 2GB works)
-- **Display** - Monitor with micro HDMI cable OR official 7" Pi display
-- **SD Card** - 32GB Class 10 microSD card
-- **Power Supply** - 5.0V / 3.0A (official Pi power supply recommended)
-- **Input** - USB/Bluetooth keyboard and mouse
+- **Raspberry Pi 5** (recommended) or **Raspberry Pi 4 Model B** (4GB RAM recommended, 2GB works)
+- **Display** - Monitor with micro HDMI cable (Pi 5) or micro HDMI (Pi 4) OR official 7" Pi display
+- **SD Card** - 32GB Class 10 microSD card (64GB+ recommended for Pi 5)
+- **Power Supply** - 
+  - **Pi 5**: 5.0V / 5.0A (27W) with USB-C connector (official Pi 5 power supply required)
+  - **Pi 4**: 5.0V / 3.0A (15W) with USB-C connector
+- **Input** - USB/Bluetooth keyboard and mouse (optional for headless setup)
 
 ### Software
-- **Raspberry Pi OS** or **Ubuntu** installed on SD card
+- **Raspberry Pi OS 64-bit** (Raspbian) - Required for SnappX installer
+  - Note: SnappX officially supports Raspberry Pi 4, but also works on Raspberry Pi 5
+- **Bash shell** (version 4.0 or higher) - Included by default
+- **Curl** - Included by default (if not, install with `sudo apt install curl`)
 - **SSH access** (for remote deployment)
 - **Internet connection** on Raspberry Pi
+- **Windows PC** with SSH client (Windows 10/11 includes OpenSSH by default)
 
 ---
 
-## 🌐 Remote Connection to Raspberry Pi
+## 🌐 Remote Connection from Windows PC to Raspberry Pi
 
-### Enable SSH (First Time Setup)
+This section covers connecting to your Raspberry Pi from a Windows PC, including initial setup, SSH configuration, and file transfer.
 
-**Option 1: Using Raspberry Pi Imager (Easiest)**
-1. Download [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
-2. Insert SD card into computer
-3. Click "Choose OS" → Select Raspberry Pi OS
-4. Click gear icon ⚙️ for advanced options
-5. Enable SSH ✅
-6. Set username/password
-7. Configure WiFi (optional)
-8. Write to SD card
+### Step 1: Prepare Raspberry Pi OS Image (First Time Setup)
 
-**Option 2: Enable SSH on Running Pi**
-```bash
-# On Raspberry Pi directly
-sudo raspi-config
-# Select: Interface Options → SSH → Enable
+**Using Raspberry Pi Imager (Recommended for Windows):**
+
+1. **Download Raspberry Pi Imager**
+   - Visit: https://www.raspberrypi.com/software/
+   - Download and install on your Windows PC
+
+2. **Insert SD Card**
+   - Insert microSD card into your Windows PC (using adapter if needed)
+   - Note: Windows may format it - that's okay, Imager will overwrite it
+
+3. **Configure OS Image**
+   - Open Raspberry Pi Imager
+   - Click **"Choose OS"** → Select **"Raspberry Pi OS (64-bit)"** (recommended for Pi 5)
+   - Click **"Choose Storage"** → Select your SD card
+   - Click the **gear icon ⚙️** (bottom-right) for **Advanced Options**
+
+4. **Configure Advanced Options (Critical for Remote Access)**
+   
+   **General Tab:**
+   - ✅ **Enable SSH** - Check this box
+   - **Set username** - Enter your desired username (e.g., `pi`, `admin`, `user`)
+   - **Set password** - Enter a secure password (remember this!)
+   - ✅ **Configure wireless LAN** (if using WiFi)
+     - SSID: Your WiFi network name
+     - Password: Your WiFi password
+     - Country: Select your country code (e.g., GB for UK, US for USA)
+   - ✅ **Set locale settings**
+     - Timezone: Select your timezone
+     - Keyboard layout: Select your keyboard
+
+   **Services Tab:**
+   - ✅ **Enable SSH** (should already be checked)
+   - ✅ **Use password authentication** (recommended for first-time setup)
+
+5. **Write Image to SD Card**
+   - Click **"Write"** button
+   - Wait for image to be written (5-10 minutes)
+   - Click **"Continue"** when done
+   - Safely eject SD card from Windows
+
+6. **Insert SD Card into Raspberry Pi**
+   - Insert SD card into Raspberry Pi
+   - Connect power supply (Pi 5 requires 27W USB-C power supply)
+   - Connect to network (Ethernet or WiFi if configured)
+   - Wait 1-2 minutes for first boot
+
+### Step 2: Find Your Raspberry Pi's IP Address
+
+**Method 1: From Your Router/Network (Easiest)**
+- Log into your router's admin panel (usually http://192.168.1.1 or http://192.168.0.1)
+- Look for connected devices
+- Find device named "raspberrypi" or your configured hostname
+- Note the IP address (e.g., 192.168.1.100)
+
+**Method 2: Using Windows Command Prompt**
+```cmd
+# Open Command Prompt or PowerShell on Windows
+# Scan your network for Raspberry Pi
+arp -a | findstr "b8-27-eb"
+# Or for Pi 5 (different MAC prefix)
+arp -a | findstr "dc-a6-32"
 ```
 
-### Find Your Pi's IP Address
+**Method 3: Using Advanced IP Scanner (Windows Tool)**
+1. Download [Advanced IP Scanner](https://www.advanced-ip-scanner.com/) (free)
+2. Scan your network (192.168.1.1-192.168.1.254)
+3. Look for device with hostname "raspberrypi"
 
-**On the Raspberry Pi:**
+**Method 4: If You Have Physical Access to Pi**
+- Connect keyboard/monitor to Pi
+- Log in with your username/password
+- Run: `hostname -I`
+- Note the IP address shown
+
+### Step 3: Connect via SSH from Windows
+
+**Windows 10/11 (Built-in OpenSSH):**
+
+1. **Open PowerShell or Command Prompt**
+   - Press `Win + X` → Select "Windows PowerShell" or "Terminal"
+   - Or search for "PowerShell" in Start menu
+
+2. **Test SSH Connection**
+   ```powershell
+   # Replace with your Pi's IP and username
+   ssh pi@192.168.1.100
+   # Or if you set a different username:
+   ssh yourusername@192.168.1.100
+   ```
+
+3. **First Connection - Accept Host Key**
+   - You'll see: "The authenticity of host '192.168.1.100' can't be established..."
+   - Type: `yes` and press Enter
+   - Enter your password (the one you set in Imager)
+   - You should now be connected!
+
+4. **If SSH is Not Available on Windows**
+   ```powershell
+   # Install OpenSSH Client (Windows 10/11)
+   # Open PowerShell as Administrator
+   Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
+   ```
+
+**Alternative: Using PuTTY (Windows)**
+
+1. **Download PuTTY**
+   - Visit: https://www.putty.org/
+   - Download and install
+
+2. **Connect with PuTTY**
+   - Open PuTTY
+   - **Host Name**: `192.168.1.100` (your Pi's IP)
+   - **Port**: `22`
+   - **Connection Type**: SSH
+   - Click **"Open"**
+   - Enter username: `pi` (or your username)
+   - Enter password when prompted
+
+**Alternative: Using Windows Terminal (Recommended)**
+
+1. **Install Windows Terminal** (if not already installed)
+   - Available from Microsoft Store
+   - Or included in Windows 11
+
+2. **Add SSH Profile**
+   - Open Windows Terminal
+   - Click dropdown arrow → Settings
+   - Add new profile:
+     ```json
+     {
+       "name": "Raspberry Pi",
+       "commandline": "ssh pi@192.168.1.100",
+       "icon": "ms-appx:///Assets/Terminal.png"
+     }
+     ```
+
+### Step 4: Secure Your Connection
+
+**Change Default Password (Important!)**
 ```bash
-hostname -I
-# Example output: 192.168.1.100
-```
-
-**On your computer (same network):**
-```bash
-# Windows
-arp -a | findstr b8-27-eb
-
-# Linux/Mac
-arp -a | grep b8:27:eb
-```
-
-### Connect via SSH
-
-**From your computer:**
-```bash
-# Replace with your Pi's IP
-ssh pi@192.168.1.100
-
-# Default password: raspberry (change this!)
-```
-
-**Change default password:**
-```bash
+# Once connected via SSH
 passwd
+# Enter new password twice
 ```
 
-### Copy Files to Pi
+**Set Up SSH Key Authentication (Optional but Recommended)**
 
-**Using SCP (from your computer):**
-```bash
-# Copy entire project
-scp -r /path/to/RaPiBot pi@192.168.1.100:~/
+**On Windows:**
+```powershell
+# Generate SSH key pair (if you don't have one)
+ssh-keygen -t ed25519 -C "your_email@example.com"
+# Press Enter to accept default location
+# Enter passphrase (optional but recommended)
 
-# Copy built bundle only
-scp -r build/linux/arm64/release/bundle pi@192.168.1.100:~/photobooth-app
+# Copy public key to Raspberry Pi
+ssh-copy-id pi@192.168.1.100
+# Enter password when prompted
 ```
 
-**Using Git (on Pi):**
+**On Raspberry Pi (after key is copied):**
 ```bash
-git clone https://github.com/your-repo/RaPiBot.git
+# Disable password authentication (optional, more secure)
+sudo nano /etc/ssh/sshd_config
+# Find: PasswordAuthentication yes
+# Change to: PasswordAuthentication no
+# Save and exit (Ctrl+X, Y, Enter)
+sudo systemctl restart ssh
+```
+
+### Step 5: Transfer Files from Windows to Raspberry Pi
+
+**Method 1: Using SCP (Secure Copy) from Windows PowerShell**
+
+```powershell
+# Copy entire project folder
+scp -r C:\code\flutter\RaPiBot pi@192.168.1.100:~/
+
+# Copy specific file
+scp C:\code\flutter\RaPiBot\pubspec.yaml pi@192.168.1.100:~/RaPiBot/
+
+# Copy built application bundle
+scp -r C:\code\flutter\RaPiBot\build\linux\arm64\release\bundle pi@192.168.1.100:~/photobooth-app
+```
+
+**Method 2: Using WinSCP (Windows GUI Tool)**
+
+1. **Download WinSCP**
+   - Visit: https://winscp.net/
+   - Download and install
+
+2. **Connect to Raspberry Pi**
+   - Open WinSCP
+   - **File protocol**: SFTP
+   - **Host name**: `192.168.1.100`
+   - **Port number**: `22`
+   - **User name**: `pi` (or your username)
+   - **Password**: Your password
+   - Click **"Login"**
+
+3. **Transfer Files**
+   - Drag and drop files from Windows (left panel) to Pi (right panel)
+   - Or use the transfer buttons
+
+**Method 3: Using Git (Recommended for Code)**
+
+**On Raspberry Pi (via SSH):**
+```bash
+# Install Git if not already installed
+sudo apt update
+sudo apt install git -y
+
+# Clone your repository
+git clone https://github.com/your-username/RaPiBot.git
 cd RaPiBot
 ```
+
+**Method 4: Using VS Code Remote SSH (Best for Development)**
+
+1. **Install VS Code Remote SSH Extension**
+   - Open VS Code
+   - Go to Extensions (Ctrl+Shift+X)
+   - Search for "Remote - SSH"
+   - Install extension
+
+2. **Connect to Raspberry Pi**
+   - Press `F1` or `Ctrl+Shift+P`
+   - Type: "Remote-SSH: Connect to Host"
+   - Enter: `pi@192.168.1.100`
+   - Select platform: Linux
+   - Enter password when prompted
+
+3. **Open Project Folder**
+   - File → Open Folder
+   - Navigate to `/home/pi/RaPiBot`
+   - Now you can edit files directly on Pi from Windows!
+
+### Step 6: Install Requirements from Windows to Raspberry Pi
+
+**Option A: Install via SSH Commands (Recommended)**
+
+**On Windows PowerShell (connected via SSH):**
+```powershell
+# Connect to Pi
+ssh pi@192.168.1.100
+
+# Update package list
+sudo apt update
+
+# Install basic development tools
+sudo apt install -y curl wget git build-essential
+
+# Install Flutter dependencies (will be done by SnappX, but manual install if needed)
+sudo apt install -y \
+  clang cmake ninja-build pkg-config \
+  libgtk-3-dev libblkid-dev liblzma-dev \
+  libx11-dev libxrandr-dev libxinerama-dev \
+  libxcursor-dev libxi-dev libxext-dev
+
+# Install video codecs (for video playback)
+sudo apt install -y \
+  libavcodec-dev libavformat-dev \
+  libavutil-dev libswscale-dev \
+  gstreamer1.0-plugins-base \
+  gstreamer1.0-plugins-good \
+  gstreamer1.0-plugins-bad \
+  gstreamer1.0-libav
+
+# Verify installations
+which git
+which curl
+clang --version
+```
+
+**Option B: Create Installation Script on Windows, Transfer and Run**
+
+**On Windows:**
+1. Create file `install-requirements.sh`:
+   ```bash
+   #!/bin/bash
+   sudo apt update
+   sudo apt install -y curl wget git build-essential
+   sudo apt install -y clang cmake ninja-build pkg-config
+   sudo apt install -y libgtk-3-dev libx11-dev
+   sudo apt install -y libavcodec-dev gstreamer1.0-plugins-base
+   echo "Requirements installed!"
+   ```
+
+2. Transfer to Pi:
+   ```powershell
+   scp install-requirements.sh pi@192.168.1.100:~/
+   ```
+
+3. Run on Pi:
+   ```powershell
+   ssh pi@192.168.1.100
+   chmod +x install-requirements.sh
+   ./install-requirements.sh
+   ```
+
+**Option C: Use Ansible (Advanced, for Multiple Pis)**
+
+1. **Install Ansible on Windows**
+   ```powershell
+   # Using WSL (Windows Subsystem for Linux)
+   wsl --install
+   # Then in WSL:
+   sudo apt install ansible
+   ```
+
+2. **Create Ansible Playbook** (`install-pi-requirements.yml`):
+   ```yaml
+   - hosts: raspberrypi
+     become: yes
+     tasks:
+       - name: Update apt cache
+         apt:
+           update_cache: yes
+       - name: Install development tools
+         apt:
+           name:
+             - curl
+             - wget
+             - git
+             - build-essential
+             - clang
+             - cmake
+   ```
+
+3. **Run Playbook**:
+   ```bash
+   ansible-playbook -i 192.168.1.100, install-pi-requirements.yml
+   ```
+
+### Troubleshooting Windows to Pi Connection
+
+**"Connection Refused" Error:**
+```powershell
+# Check if SSH is running on Pi
+ssh pi@192.168.1.100 "sudo systemctl status ssh"
+
+# If not running, enable it (requires physical access or alternative connection)
+```
+
+**"Host Key Verification Failed":**
+```powershell
+# Remove old host key from Windows
+ssh-keygen -R 192.168.1.100
+# Then reconnect
+```
+
+**"Permission Denied":**
+- Verify username is correct
+- Check password (case-sensitive)
+- Ensure SSH is enabled on Pi
+
+**Can't Find Pi on Network:**
+- Verify Pi and Windows PC are on same network
+- Check firewall settings on Windows
+- Try pinging Pi: `ping 192.168.1.100`
+- Check router's connected devices list
+
+**Slow File Transfers:**
+- Use Ethernet instead of WiFi if possible
+- Check network speed
+- Consider using `rsync` instead of `scp` for large transfers:
+  ```powershell
+  # Install rsync on Windows (via WSL or Git Bash)
+  rsync -avz C:\code\flutter\RaPiBot\ pi@192.168.1.100:~/RaPiBot/
+  ```
 
 ---
 
 ## 🚀 Quick Deployment with SnappX
 
-**SnappX (snapp_installer)** is a command-line tool that simplifies Flutter deployment on Raspberry Pi, including automatic kiosk mode setup.
+**SnappX (snapp_installer)** is a command-line tool that simplifies Flutter deployment on Raspberry Pi, including automatic kiosk mode setup. According to the [official repository](https://github.com/Snapp-X/snapp_installer), it officially supports Raspberry Pi 4 with Raspberry Pi OS 64-bit, but also works on Raspberry Pi 5.
 
-### Step 1: Install SnappX on Raspberry Pi
+### What is SnappX?
 
-```bash
-# SSH into your Pi
+**snapp_installer** is a Bash script that automates the process of setting up the Flutter environment on your Raspberry Pi. It:
+
+- ✅ Installs Flutter SDK optimized for Raspberry Pi
+- ✅ Sets up all required dependencies automatically
+- ✅ Configures environment variables (PATH)
+- ✅ Provides kiosk mode management
+- ✅ Handles auto-login configuration
+- ✅ Installs essential Linux packages (curl, git, etc.)
+- ✅ Clones Flutter from GitHub
+- ✅ Installs development dependencies
+- ✅ Runs Flutter Doctor to verify setup
+- ✅ Precaches Linux-specific assets
+
+### 📋 Quick Installation Summary
+
+Here's the complete process in 4 steps:
+
+1. **Install SnappX**: `bash <(curl -fSL https://raw.githubusercontent.com/Snapp-X/snapp_installer/main/installer.sh) && source ~/.bashrc`
+2. **Verify**: `snapp_installer doctor`
+3. **Install Flutter**: `snapp_installer install` (then run `source ~/.bashrc`)
+4. **Verify Flutter**: `flutter --version` and `flutter doctor`
+
+**Total time: ~15-25 minutes** (depending on internet speed and Pi model)
+
+---
+
+### Step 1: Connect to Your Raspberry Pi
+
+**From Windows PowerShell:**
+```powershell
+# Connect via SSH (replace with your Pi's IP)
 ssh pi@192.168.1.100
-
-# Install snapp_installer
-bash <(curl -fSL https://snappembedded.io/installer) && source ~/.bashrc
+# Enter your password when prompted
 ```
 
-### Step 2: Verify Installation
+### Step 2: Install SnappX on Raspberry Pi
+
+**On Raspberry Pi (via SSH):**
 
 ```bash
+# Install snapp_installer (one command!)
+bash <(curl -fSL https://raw.githubusercontent.com/Snapp-X/snapp_installer/main/installer.sh) && source ~/.bashrc
+```
+
+**What this does:**
+- Downloads the SnappX installer script
+- Installs snapp_installer to your system
+- Adds it to your PATH
+- Reloads your shell configuration
+
+**Installation takes 1-2 minutes.**
+
+**If you get "curl: command not found":**
+```bash
+# Install curl first
+sudo apt update
+sudo apt install curl -y
+# Then retry SnappX installation
+bash <(curl -fSL https://raw.githubusercontent.com/Snapp-X/snapp_installer/main/installer.sh) && source ~/.bashrc
+```
+
+**If you get permission errors:**
+```bash
+# Make sure you're using a user with sudo privileges
+# The default 'pi' user should work
+```
+
+**If you get SSL/TLS errors (like "error:0A000438:SSL routines::tlsv1 alert internal error"):**
+
+This error usually means your curl/OpenSSL is outdated or there's an SSL certificate issue. Try these solutions:
+
+**Solution 1: Update curl and OpenSSL (Recommended)**
+```bash
+# Update package list
+sudo apt update
+
+# Upgrade curl and OpenSSL
+sudo apt upgrade curl openssl -y
+
+# Try installation again
+bash <(curl -fSL https://raw.githubusercontent.com/Snapp-X/snapp_installer/main/installer.sh) && source ~/.bashrc
+```
+
+**Solution 2: Use wget instead of curl**
+```bash
+# Install wget if not already installed
+sudo apt install wget -y
+
+# Download installer script with wget
+wget -O installer.sh https://raw.githubusercontent.com/Snapp-X/snapp_installer/main/installer.sh
+
+# Run the installer
+bash installer.sh && source ~/.bashrc
+
+# Clean up
+rm installer.sh
+```
+
+**Solution 3: Use curl with insecure flag (Temporary workaround)**
+```bash
+# Use --insecure flag (not recommended for production, but works)
+bash <(curl -fSLk https://raw.githubusercontent.com/Snapp-X/snapp_installer/main/installer.sh) && source ~/.bashrc
+```
+
+**Solution 4: Download manually and run**
+```bash
+# Download the installer script
+curl -fSL https://raw.githubusercontent.com/Snapp-X/snapp_installer/main/installer.sh -o snappx-installer.sh
+
+# Make it executable
+chmod +x snappx-installer.sh
+
+# Run it
+bash snappx-installer.sh && source ~/.bashrc
+
+# Clean up
+rm snappx-installer.sh
+```
+
+**Solution 5: Check system time (SSL certificates are time-sensitive)**
+```bash
+# Check current date/time
+date
+
+# If date is wrong, sync time (requires internet)
+sudo apt install ntpdate -y
+sudo ntpdate -s time.nist.gov
+
+# Or set timezone
+sudo timedatectl set-timezone UTC
+# Or your timezone: sudo timedatectl set-timezone America/New_York
+
+# Try installation again
+bash <(curl -fSL https://raw.githubusercontent.com/Snapp-X/snapp_installer/main/installer.sh) && source ~/.bashrc
+```
+
+**Solution 6: Update CA certificates**
+```bash
+# Update certificate store
+sudo apt update
+sudo apt install ca-certificates -y
+sudo update-ca-certificates
+
+# Try installation again
+bash <(curl -fSL https://raw.githubusercontent.com/Snapp-X/snapp_installer/main/installer.sh) && source ~/.bashrc
+```
+
+**If none of these work:**
+- Check your internet connection: `ping -c 3 google.com`
+- Check if GitHub is accessible: `curl -I https://github.com`
+- Try from a different network (some corporate networks block SSL)
+- Check firewall settings: `sudo ufw status`
+
+### Step 3: Verify SnappX Installation
+
+```bash
+# Check if snapp_installer is installed
 snapp_installer doctor
 ```
 
@@ -120,54 +578,284 @@ snapp_installer doctor
 ✓ Dependencies are ready
 ```
 
-### Step 3: Install Flutter Environment
+**Available SnappX Commands** (from [official repository](https://github.com/Snapp-X/snapp_installer)):
+
+| Command | Description |
+|---------|-------------|
+| `snapp_installer doctor` | Check installation status and dependencies |
+| `snapp_installer install` | Install Flutter and set up the environment |
+| `snapp_installer uninstall` | Uninstall Flutter (Note: Not implemented yet) |
+| `snapp_installer kiosk [path]` | Run a Flutter app bundle in kiosk mode |
+| `snapp_installer disable_kiosk` | Disable the kiosk mode |
+| `snapp_installer autologin` | Enable auto login on your device |
+| `snapp_installer disable_autologin` | Disable auto login on your device |
+| `snapp_installer enable_fullscreen` | Enable Full Screen in your Flutter project |
+
+**If you see errors:**
+```bash
+# Reload shell configuration
+source ~/.bashrc
+
+# Or open a new SSH session
+exit
+ssh pi@192.168.1.100
+snapp_installer doctor
+```
+
+### Step 4: Install Flutter Environment with SnappX
+
+**This is the main installation step - it installs Flutter and all dependencies:**
 
 ```bash
 snapp_installer install
 ```
 
-This will:
-- ✅ Install Linux dependencies
-- ✅ Clone Flutter from GitHub
-- ✅ Set up PATH variables
-- ✅ Install development dependencies
-- ✅ Run flutter doctor
-- ✅ Precache Linux assets
+**What this command does (according to [official documentation](https://github.com/Snapp-X/snapp_installer)):**
 
-### Step 4: Build Your App
+1. **Installs Linux Dependencies**
+   - Ensures essential Linux packages are installed (curl, git, and more)
+   - Installs build tools and compilers
 
-**Option A: Build on Pi (slower but simpler)**
+2. **Clones Flutter from GitHub**
+   - Fetches the Flutter repository from GitHub
+   - Places it in your specified directory
+
+3. **Sets Up PATH**
+   - Configures your system's PATH environment variable
+   - Makes the `flutter` command globally executable
+
+4. **Installs Development Dependencies**
+   - Installs necessary Linux development dependencies
+   - Includes compilers and libraries required for Flutter app development
+
+5. **Chooses Flutter Channel**
+   - You can specify your preferred Flutter channel (stable, beta, etc.)
+   - Ensures you're using the desired Flutter release
+
+6. **Runs Flutter Doctor**
+   - Checks your Flutter installation
+   - Displays any missing components or configuration issues
+
+7. **Precaches Assets**
+   - Precaches Linux-specific assets
+   - Ensures a smooth development experience
+
+**Installation takes 10-20 minutes** depending on your internet speed and Pi model.
+
+**Progress indicators:**
+- Package installation progress
+- Flutter repository clone progress
+- Flutter doctor output
+- Final success message
+
+**Important Note:**
+After running the "install" command, you need to restart your terminal or run `source ~/.bashrc` to apply the changes to your PATH environment variable.
+
+**If installation fails:**
 ```bash
+# Check internet connection
+ping -c 3 google.com
+
+# Check disk space (need at least 5GB free)
+df -h
+
+# Check if Flutter was partially installed
+ls -la ~/snap/flutter/common/flutter
+
+# Retry installation
+snapp_installer install
+```
+
+### Step 5: Verify Flutter Installation
+
+```bash
+# Check Flutter version
+flutter --version
+
+# Run Flutter doctor
+flutter doctor
+
+# Expected output should show:
+# ✓ Flutter (Channel stable)
+# ✓ Linux toolchain
+# ✓ Android toolchain (optional)
+```
+
+**If Flutter is not found:**
+```bash
+# First, reload shell configuration (required after install)
+source ~/.bashrc
+
+# Or restart your terminal/SSH session
+exit
+ssh pi@192.168.1.100
+
+# Check if Flutter is in PATH
+echo $PATH | grep flutter
+
+# Check where Flutter was installed (varies by installation method)
+which flutter
+flutter --version
+
+# If still not found, check common installation locations
+ls -la ~/snap/flutter/common/flutter/bin/flutter
+ls -la ~/flutter/bin/flutter
+
+# Manually add to PATH if needed (adjust path based on actual installation location)
+# Common locations:
+# export PATH="$PATH:$HOME/snap/flutter/common/flutter/bin"
+# export PATH="$PATH:$HOME/flutter/bin"
+# Then add to ~/.bashrc to make permanent:
+# echo 'export PATH="$PATH:$HOME/snap/flutter/common/flutter/bin"' >> ~/.bashrc
+```
+
+### Step 6: Prepare Your Project on Raspberry Pi
+
+**Option A: Clone from Git (Recommended)**
+
+```bash
+# On Raspberry Pi (via SSH)
+cd ~
+git clone https://github.com/your-username/RaPiBot.git
+cd RaPiBot
+
+# Install Flutter dependencies
+flutter pub get
+```
+
+**Option B: Transfer from Windows**
+
+**From Windows PowerShell:**
+```powershell
+# Copy entire project folder
+scp -r C:\code\flutter\RaPiBot pi@192.168.1.100:~/
+
+# Then on Pi
+ssh pi@192.168.1.100
 cd ~/RaPiBot
 flutter pub get
+```
+
+**Option C: Use VS Code Remote SSH**
+
+1. Connect VS Code to Pi (see Step 5 in Remote Connection section)
+2. Open folder: `/home/pi/RaPiBot`
+3. Open terminal in VS Code (Ctrl+`)
+4. Run: `flutter pub get`
+
+### Step 7: Build Your App
+
+**Option A: Build on Raspberry Pi (Simpler, but slower)**
+
+**On Raspberry Pi (via SSH):**
+```bash
+cd ~/RaPiBot
+
+# Get dependencies
+flutter pub get
+
+# Build for Linux ARM64 (Raspberry Pi)
 flutter build linux --release
 ```
 
-**Option B: Cross-compile on your computer (faster)**
-```bash
-# On your development machine
+**Build time:**
+- Raspberry Pi 4: 15-30 minutes
+- Raspberry Pi 5: 5-15 minutes (much faster!)
+
+**The built app will be at:**
+```
+~/RaPiBot/build/linux/arm64/release/bundle/rapibot
+```
+
+**Option B: Cross-compile on Windows (Faster, but more complex)**
+
+**Prerequisites on Windows:**
+- Flutter SDK installed
+- Linux toolchain for cross-compilation
+
+**On Windows:**
+```powershell
+# Navigate to project
+cd C:\code\flutter\RaPiBot
+
+# Build for Linux ARM64
 flutter build linux --release --target-platform linux-arm64
 
-# Copy to Pi
-scp -r build/linux/arm64/release/bundle pi@192.168.1.100:~/photobooth-app
+# Copy built bundle to Pi
+scp -r build\linux\arm64\release\bundle pi@192.168.1.100:~/photobooth-app
 ```
 
-### Step 5: Deploy in Kiosk Mode
+**Note:** Cross-compilation from Windows to ARM64 Linux may require additional setup. Building on Pi is recommended for simplicity.
+
+### Step 8: Deploy in Kiosk Mode
+
+**Kiosk mode makes your app run automatically in fullscreen on boot - perfect for a photo booth!**
+
+According to the [official SnappX documentation](https://github.com/Snapp-X/snapp_installer), you can enable kiosk mode in two ways:
+
+#### Option A: By Flutter Project Directory
+
+If you have a Flutter project on your Raspberry Pi, you can enable kiosk mode directly from the project directory:
 
 ```bash
-# Enable kiosk mode (will auto-login and run fullscreen)
-snapp_installer kiosk /home/pi/RaPiBot/build/linux/arm64/release/bundle/rapibot
+# Navigate to your Flutter project
+cd ~/RaPiBot
 
-# Or if you copied just the bundle
-snapp_installer kiosk /home/pi/photobooth-app/rapibot
+# Enable kiosk mode (snapp_installer will build and run automatically)
+snapp_installer kiosk
 ```
 
-**The Pi will now:**
-- ✅ Auto-login on boot
-- ✅ Launch photo booth in fullscreen
-- ✅ Hide mouse cursor
-- ✅ Disable screensaver
-- ✅ Run 24/7
+#### Option B: By Flutter App Bundle (Recommended for Production)
+
+1. **Build Your Flutter App First:**
+   ```bash
+   cd ~/RaPiBot
+   flutter build linux --release
+   ```
+
+2. **Enable Kiosk Mode with Full Path:**
+   ```bash
+   # Enable kiosk mode with full path to your app bundle
+   snapp_installer kiosk /home/pi/RaPiBot/build/linux/arm64/release/bundle/rapibot
+   
+   # Or if you copied just the bundle to a different location
+   snapp_installer kiosk /home/pi/photobooth-app/rapibot
+   ```
+
+**Important:** Ensure that the specified file path:
+- ✅ Exists
+- ✅ Points to an executable file
+- ✅ Is the path to your Flutter app bundle (the compiled binary)
+
+**What kiosk mode does:**
+- ✅ Configures auto-login (Pi logs in automatically on boot)
+  - If auto-login is not already enabled, snapp_installer will enable it for you
+- ✅ Creates systemd service to launch your app
+- ✅ Sets app to run in fullscreen mode
+- ✅ Hides mouse cursor when idle
+- ✅ Disables screensaver/power management
+- ✅ Restarts app if it crashes
+- ✅ Launches app automatically on boot
+
+**After enabling kiosk mode:**
+```bash
+# Reboot to test
+sudo reboot
+
+# Your app should launch automatically after reboot!
+```
+
+**To test without rebooting:**
+```bash
+# Start the kiosk service manually
+sudo systemctl start photobooth.service
+
+# Check status
+sudo systemctl status photobooth.service
+
+# View logs
+journalctl -u photobooth.service -f
+```
 
 ---
 
@@ -249,13 +937,17 @@ snapp_installer disable_kiosk
 
 ### Enable/Disable Auto-Login
 
+**Auto-login is required for kiosk mode.** According to the [official documentation](https://github.com/Snapp-X/snapp_installer), you can manage it manually:
+
 ```bash
-# Enable auto-login
+# Enable auto-login (required for kiosk mode)
 snapp_installer autologin
 
 # Disable auto-login
 snapp_installer disable_autologin
 ```
+
+**Note:** When you enable kiosk mode, snapp_installer will automatically enable auto-login if it's not already enabled.
 
 ### Check Service Status
 
@@ -273,6 +965,56 @@ sudo systemctl stop photobooth.service
 ---
 
 ## 🐛 Troubleshooting
+
+### SnappX Installation Errors
+
+**SSL/TLS Error when installing SnappX:**
+```
+curl: (35) OpenSSL/3.0.17: error:0A000438:SSL routines::tlsv1 alert internal error
+```
+
+**Quick Fix - Update curl and OpenSSL:**
+```bash
+sudo apt update
+sudo apt upgrade curl openssl ca-certificates -y
+bash <(curl -fSL https://raw.githubusercontent.com/Snapp-X/snapp_installer/main/installer.sh) && source ~/.bashrc
+```
+
+**Alternative - Use wget:**
+```bash
+sudo apt install wget -y
+wget -O installer.sh https://raw.githubusercontent.com/Snapp-X/snapp_installer/main/installer.sh
+bash installer.sh && source ~/.bashrc
+rm installer.sh
+```
+
+**Check system time (SSL certificates require correct time):**
+```bash
+date  # Check if date is correct
+sudo timedatectl set-timezone UTC  # Set timezone if needed
+sudo ntpdate -s time.nist.gov  # Sync time
+```
+
+See [Step 2: Install SnappX](#step-2-install-snappx-on-raspberry-pi) section above for more detailed solutions.
+
+**"curl: command not found":**
+```bash
+sudo apt update
+sudo apt install curl -y
+```
+
+**"snapp_installer: command not found" after installation:**
+```bash
+# Reload shell configuration
+source ~/.bashrc
+
+# Or check if it's in PATH
+echo $PATH | grep snapp
+
+# Manually add to PATH if needed (check installation location)
+export PATH="$PATH:$HOME/.local/bin"
+source ~/.bashrc
+```
 
 ### SSH Connection Issues
 
@@ -475,8 +1217,9 @@ sudo raspi-config
 ### Official Documentation
 
 1. **SnappX Installer**
-   - Website: https://snappembedded.io
-   - GitHub: https://github.com/Snapp-Embedded/snapp_installer
+   - GitHub: https://github.com/Snapp-X/snapp_installer
+   - Installation: `bash <(curl -fSL https://raw.githubusercontent.com/Snapp-X/snapp_installer/main/installer.sh)`
+   - Website: https://snappembedded.io (company website)
    - Tutorial: [Flutter on Raspberry Pi (snapp_installer)](https://medium.com/snapp-x/flutter-on-raspberry-pi-raspi-flutter-e1760818ba0c)
 
 2. **Flutter-elinux**
@@ -511,11 +1254,13 @@ sudo raspi-config
 ## ✅ Deployment Checklist
 
 ### Pre-Deployment
-- [ ] Raspberry Pi 4 (4GB+ RAM) ready
-- [ ] SD card flashed with Raspberry Pi OS/Ubuntu
-- [ ] SSH enabled and tested
-- [ ] Pi connected to network
+- [ ] Raspberry Pi 5 or Pi 4 (4GB+ RAM) ready
+- [ ] SD card (32GB+ for Pi 4, 64GB+ recommended for Pi 5) flashed with Raspberry Pi OS (64-bit)
+- [ ] SSH enabled via Raspberry Pi Imager advanced options
+- [ ] Pi connected to network (WiFi or Ethernet)
 - [ ] Display connected and working
+- [ ] Windows PC with SSH client ready
+- [ ] Successfully connected to Pi via SSH from Windows
 
 ### Installation
 - [ ] SnappX installer installed
@@ -544,17 +1289,33 @@ sudo raspi-config
 ## 🎯 Quick Commands Reference
 
 ```bash
-# Installation
-bash <(curl -fSL https://snappembedded.io/installer) && source ~/.bashrc
+# Install SnappX
+bash <(curl -fSL https://raw.githubusercontent.com/Snapp-X/snapp_installer/main/installer.sh) && source ~/.bashrc
+
+# Verify Installation
+snapp_installer doctor
+
+# Install Flutter Environment
 snapp_installer install
+source ~/.bashrc  # Required after install
 
-# Deployment
-snapp_installer kiosk /home/pi/photobooth-app/rapibot
+# Verify Flutter
+flutter --version
+flutter doctor
 
-# Management
+# Build Your App
+cd ~/RaPiBot
+flutter pub get
+flutter build linux --release
+
+# Deploy in Kiosk Mode
+snapp_installer kiosk /home/pi/RaPiBot/build/linux/arm64/release/bundle/rapibot
+
+# Management Commands
 snapp_installer disable_kiosk
 snapp_installer autologin
 snapp_installer disable_autologin
+snapp_installer enable_fullscreen
 
 # Monitoring
 sudo systemctl status photobooth
@@ -564,6 +1325,8 @@ journalctl -u photobooth -f
 ssh pi@192.168.1.100
 scp -r build/bundle pi@192.168.1.100:~/app
 ```
+
+**For complete command reference, see [SnappX GitHub Repository](https://github.com/Snapp-X/snapp_installer)**
 
 ---
 
@@ -580,9 +1343,9 @@ Your DevFest London 2025 Photo Booth should now be running on Raspberry Pi!
 - ✅ Perfect for events!
 
 **Need Help?**
-- Check [SnappX Documentation](https://snappembedded.io)
+- Check [SnappX GitHub Repository](https://github.com/Snapp-X/snapp_installer)
 - Review [Troubleshooting](#-troubleshooting) section
-- Open issue on GitHub
+- Open issue on [SnappX GitHub](https://github.com/Snapp-X/snapp_installer/issues)
 
 ---
 

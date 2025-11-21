@@ -44,7 +44,7 @@ This Flutter app is a complete reimplementation of the original Python-based Pom
 
 #### SnappX (snapp_installer) - Recommended Method
 
-**Tool**: [snapp_installer](https://github.com/Snapp-Embedded/snapp_installer)  
+**Tool**: [snapp_installer](https://github.com/Snapp-X/snapp_installer)  
 **Website**: [snappembedded.io](https://snappembedded.io)  
 **Article**: [Flutter on Raspberry Pi (snapp_installer)](https://medium.com/snapp-x/flutter-on-raspberry-pi-raspi-flutter-e1760818ba0c)  
 **Authors**: Payam Zahedi & Moritz Theis  
@@ -53,7 +53,7 @@ This Flutter app is a complete reimplementation of the original Python-based Pom
 SnappX (snapp_installer) is a command-line tool that simplifies Flutter deployment on Raspberry Pi.
 
 **Features**:
-- ✅ One-line installation: `bash <(curl -fSL https://snappembedded.io/installer)`
+- ✅ One-line installation: `bash <(curl -fSL https://raw.githubusercontent.com/Snapp-X/snapp_installer/main/installer.sh)`
 - ✅ Automatic Flutter environment setup
 - ✅ Built-in kiosk mode support
 - ✅ Auto-login configuration
@@ -353,7 +353,7 @@ Check the [original repository](https://github.com/CodersCafeTech/PomodoroBot) f
 
 ### Related Projects
 
-- **snapp_installer**: [github.com/Snapp-Embedded/snapp_installer](https://github.com/Snapp-Embedded/snapp_installer) - CLI tool for Raspberry Pi deployment
+- **snapp_installer**: [github.com/Snapp-X/snapp_installer](https://github.com/Snapp-X/snapp_installer) - CLI tool for Raspberry Pi deployment
 - **flutter-elinux**: [github.com/sony/flutter-elinux](https://github.com/sony/flutter-elinux) - Sony's embedded Linux support
 - **flutter-pi**: Alternative Raspberry Pi Flutter runtime
 - **Flutter Desktop Embedding**: Desktop platform support

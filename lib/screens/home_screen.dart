@@ -35,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late IntentService _intentService;
   late VoiceCommandHandler _commandHandler;
   bool _voiceInitialized = false;
-  bool _useMockVoice = true; // Set to false to use real voice service
+  bool _useMockVoice = false; // ✅ ENABLED: Now using real TTS with audio output!
 
   @override
   void initState() {
