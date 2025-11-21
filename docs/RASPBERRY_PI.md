@@ -1910,6 +1910,87 @@ Your DevFest London 2025 Photo Booth should now be running on Raspberry Pi!
 
 ---
 
+## 🌐 Flutter Web Deployment (Recommended for Raspberry Pi 5)
+
+**If you're having issues with native Linux build on Raspberry Pi 5 (GPU memory, EGL errors), Flutter web is a reliable alternative that runs in Chromium.**
+
+### Quick Setup
+
+**Step 1: Build for Web**
+```bash
+cd ~/RaPiBot
+chmod +x build_web.sh
+./build_web.sh
+```
+
+**Step 2: Launch in Kiosk Mode**
+```bash
+chmod +x launch_web_kiosk.sh
+./launch_web_kiosk.sh
+```
+
+**Step 3: Setup Autostart (Optional)**
+```bash
+chmod +x setup_web_autostart.sh
+./setup_web_autostart.sh
+```
+
+### Manual Steps
+
+**Build for Web:**
+```bash
+cd ~/RaPiBot
+flutter config --enable-web
+flutter clean
+flutter pub get
+flutter build web --release
+```
+
+**Start Web Server:**
+```bash
+cd ~/RaPiBot/build/web
+python3 -m http.server 8080
+```
+
+**Launch Chromium Kiosk:**
+```bash
+chromium-browser \
+  --kiosk \
+  --app=http://localhost:8080 \
+  --noerrdialogs \
+  --disable-translate \
+  --autoplay-policy=no-user-gesture-required
+```
+
+### Benefits of Web Deployment
+
+- ✅ No GPU memory configuration needed
+- ✅ No EGL/OpenGL driver issues
+- ✅ Video playback works via browser
+- ✅ Easier to update (just rebuild and refresh)
+- ✅ Works reliably on Raspberry Pi 5
+
+### Troubleshooting Web Deployment
+
+**Chromium not installed:**
+```bash
+sudo apt update
+sudo apt install -y chromium-browser
+```
+
+**Port 8080 already in use:**
+```bash
+# Change port in serve_web.sh or launch_web_kiosk.sh
+python3 -m http.server 8081  # Use different port
+```
+
+**App not loading:**
+- Check web server is running: `ps aux | grep "http.server"`
+- Check Chromium console: Press F12 in kiosk mode (if possible)
+- View server logs: `cat /tmp/rapibot_web_server.log`
+
+---
+
 [← Back to Documentation](README.md) | [Setup Guide →](SETUP.md) | [Development →](DEVELOPMENT.md)
 
 **Made with ❤️ for DevFest London 2025**
