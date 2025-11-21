@@ -48,7 +48,26 @@ The app should open in your browser with:
 
 ## 🎥 Video Files Setup
 
-The app works **without videos**, but for the full experience, add MP4 animations.
+**⚠️ Important:** The app works **without videos**, but will show "Video playback not available" message. Videos enhance the experience with animated visual feedback.
+
+### Quick Setup (Recommended)
+
+**Windows:**
+```cmd
+setup_videos.bat
+```
+
+**Linux/Mac/Git Bash:**
+```bash
+chmod +x setup_videos.sh
+./setup_videos.sh
+```
+
+This script automatically downloads all required video files from the original project.
+
+### Manual Setup
+
+If the script doesn't work, you can manually download videos:
 
 ### Option 1: Download from Original Project (Recommended)
 

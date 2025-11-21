@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Video URL</title>
+</head>
+<body>
+    <h1>Test Video URLs</h1>
+    <p>Open browser console (F12) and check Network tab when clicking links below.</p>
+    
+    <h2>Test 1: With /assets/ prefix</h2>
+    <video id="video1" controls width="400">
+        <source src="/assets/animations/blink.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <p><a href="/assets/animations/blink.mp4" target="_blank">Direct link: /assets/animations/blink.mp4</a></p>
+    
+    <h2>Test 2: Without /assets/ prefix</h2>
+    <video id="video2" controls width="400">
+        <source src="/animations/blink.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <p><a href="/animations/blink.mp4" target="_blank">Direct link: /animations/blink.mp4</a></p>
+    
+    <h2>Instructions</h2>
+    <ol>
+        <li>Place this file in: build/web/test_video_url.html</li>
+        <li>Start web server: python -m http.server 8080 (from build/web)</li>
+        <li>Open: http://localhost:8080/test_video_url.html</li>
+        <li>Check which video loads and check Network tab for actual URLs</li>
+    </ol>
+</body>
+</html>
+

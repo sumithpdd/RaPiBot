@@ -27,21 +27,22 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   }
 
   void _initializeVideoPlayer() {
-    // On web, assets need to be served via HTTP
-    // Convert asset path to network URL for web
     String videoSource = widget.videoPath;
     
     if (kIsWeb) {
-      // For web, assets are served from the root
-      // Remove 'assets/' prefix and use as network URL
-      videoSource = videoSource.replaceFirst('assets/', '');
-      // Use network URL (assuming server is running on same host)
+      // For web, use network URL since direct URL works
+      // Path should be /assets/animations/blink.mp4 (with leading slash)
       final baseUrl = Uri.base.origin;
-      videoSource = '$baseUrl/$videoSource';
-      debugPrint('[VideoPlayer] Web: Using network URL: $videoSource');
-      _controller = VideoPlayerController.networkUrl(Uri.parse(videoSource));
+      // Ensure path starts with / for absolute path
+      if (!videoSource.startsWith('/')) {
+        videoSource = '/$videoSource';
+      }
+      final fullUrl = '$baseUrl$videoSource';
+      debugPrint('[VideoPlayer] Web: Using network URL: $fullUrl');
+      _controller = VideoPlayerController.networkUrl(Uri.parse(fullUrl));
     } else {
       // For native platforms, use asset controller
+      debugPrint('[VideoPlayer] Native: Using asset controller for: ${widget.videoPath}');
       _controller = VideoPlayerController.asset(widget.videoPath);
     }
 
@@ -51,14 +52,21 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         _controller.play();
         debugPrint('[VideoPlayer] ✓ Video ready: ${widget.videoPath}');
       }
-    }).catchError((error) {
+    }).catchError((error, stackTrace) {
       // Handle video initialization errors gracefully
       debugPrint('[VideoPlayer] ✗ Initialization failed: $error');
+      debugPrint('[VideoPlayer] Stack trace: $stackTrace');
+      debugPrint('[VideoPlayer] Video path: ${widget.videoPath}');
+      debugPrint('[VideoPlayer] Platform: ${kIsWeb ? "Web" : "Native"}');
+      
       if (kIsWeb) {
         debugPrint('[VideoPlayer] Web: Make sure video files are in build/web/assets/animations/');
         debugPrint('[VideoPlayer] Web: Check browser console for CORS or 404 errors');
+        debugPrint('[VideoPlayer] Web: Expected URL: ${Uri.base.origin}/${widget.videoPath}');
       } else {
-        debugPrint('[VideoPlayer] Note: On Linux, install GStreamer: sudo apt install gstreamer1.0-plugins-base gstreamer1.0-libav');
+        debugPrint('[VideoPlayer] Native: Check if video file exists in assets/animations/');
+        debugPrint('[VideoPlayer] Native: On Linux, install GStreamer: sudo apt install gstreamer1.0-plugins-base gstreamer1.0-libav');
+        debugPrint('[VideoPlayer] Native: On Windows, ensure video codecs are installed');
       }
       // Re-throw to be caught by FutureBuilder
       throw error;
@@ -90,11 +98,13 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       String videoSource = newPath;
       
       if (kIsWeb) {
-        // For web, convert asset path to network URL
-        videoSource = videoSource.replaceFirst('assets/', '');
+        // For web, use network URL with leading slash
         final baseUrl = Uri.base.origin;
-        videoSource = '$baseUrl/$videoSource';
-        _controller = VideoPlayerController.networkUrl(Uri.parse(videoSource));
+        if (!videoSource.startsWith('/')) {
+          videoSource = '/$videoSource';
+        }
+        final fullUrl = '$baseUrl$videoSource';
+        _controller = VideoPlayerController.networkUrl(Uri.parse(fullUrl));
       } else {
         _controller = VideoPlayerController.asset(newPath);
       }

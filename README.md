@@ -22,21 +22,41 @@ Built with Flutter for DevFest London 2025. Based on [CodersCafeTech/PomodoroBot
 
 ## ⚡ Quick Start
 
-### Run on Web (Testing)
+### 1. Install Dependencies
 
 ```bash
-# 1. Install dependencies
 flutter pub get
+```
 
-# 2. Run on web
+### 2. Setup Video Files (Optional but Recommended)
+
+**Windows:**
+```cmd
+setup_videos.bat
+```
+
+**Linux/Mac/Git Bash:**
+```bash
+chmod +x setup_videos.sh
+./setup_videos.sh
+```
+
+**Note:** The app works without videos, but will show "Video playback not available". Videos enhance the experience with animated feedback.
+
+### 3. Run the App
+
+**Web (Recommended for Testing):**
+```bash
 flutter run -d chrome
 
 # Or use helper scripts:
-# Windows:
-run_web.bat
+# Windows: run_web.bat
+# Linux/Mac: ./run_web.sh
+```
 
-# Linux/Mac:
-./run_web.sh
+**Desktop:**
+```bash
+flutter run
 ```
 
 ### Welcome Message

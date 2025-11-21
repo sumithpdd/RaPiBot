@@ -1916,20 +1916,45 @@ Your DevFest London 2025 Photo Booth should now be running on Raspberry Pi!
 
 ### Quick Setup
 
-**Step 1: Build for Web**
+**Step 1: Copy Latest Code to Raspberry Pi**
+
+From Windows PowerShell:
+```powershell
+# Make sure you've committed your changes
+cd C:\code\flutter\RaPiBot
+git add .
+git commit -m "Fix video playback for web"
+git push
+
+# Then on Pi, pull the latest
+ssh pi@192.168.1.133
+cd ~/RaPiBot
+git pull
+```
+
+**Step 2: Setup Video Files (Optional but Recommended)**
+
 ```bash
 cd ~/RaPiBot
+chmod +x setup_videos.sh
+./setup_videos.sh
+```
+
+**Note:** Videos are optional - the app works without them but will show "Video playback not available".
+
+**Step 3: Build for Web**
+```bash
 chmod +x build_web.sh
 ./build_web.sh
 ```
 
-**Step 2: Launch in Kiosk Mode**
+**Step 4: Launch in Kiosk Mode**
 ```bash
 chmod +x launch_web_kiosk.sh
 ./launch_web_kiosk.sh
 ```
 
-**Step 3: Setup Autostart (Optional)**
+**Step 5: Setup Autostart (Optional)**
 ```bash
 chmod +x setup_web_autostart.sh
 ./setup_web_autostart.sh
