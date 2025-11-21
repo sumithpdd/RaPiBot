@@ -709,7 +709,24 @@ ls -la ~/flutter/bin/flutter
 # echo 'export PATH="$PATH:$HOME/snap/flutter/common/flutter/bin"' >> ~/.bashrc
 ```
 
-### Step 6: Prepare Your Project on Raspberry Pi
+### Step 6: Enable Linux Desktop Support (If Not Already Done)
+
+**Before preparing your project, ensure Linux desktop support is enabled:**
+
+```bash
+# Navigate to your project (if you already cloned/transferred it)
+cd ~/RaPiBot
+
+# Enable Linux desktop support
+flutter create --platforms=linux .
+
+# Verify linux/ folder was created
+ls -la linux/
+```
+
+**Note:** If you're cloning a fresh project, you can enable Linux support after cloning. If you transferred from Windows and the project already has a `linux/` folder, you can skip this step.
+
+### Step 7: Prepare Your Project on Raspberry Pi
 
 **Option A: Clone from Git (Recommended)**
 
@@ -721,6 +738,37 @@ cd RaPiBot
 
 # Install Flutter dependencies
 flutter pub get
+```
+
+**Updating Project with Git Pull:**
+
+If you already have the project cloned and want to pull latest changes:
+
+```bash
+# Navigate to project directory
+cd ~/RaPiBot
+
+# Pull latest changes from GitHub
+git pull
+
+# If you get authentication errors, you might need to set up credentials
+# Or use HTTPS with a personal access token
+
+# After pulling, get updated dependencies
+flutter pub get
+```
+
+**Configure Git (if not already done):**
+
+```bash
+# Set up git user information (one-time setup)
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+
+# Then you can pull updates
+git pull origin main
+# or
+git pull origin master
 ```
 
 **Option B: Transfer from Windows**
@@ -743,7 +791,39 @@ flutter pub get
 3. Open terminal in VS Code (Ctrl+`)
 4. Run: `flutter pub get`
 
-### Step 7: Build Your App
+### Step 7: Enable Linux Desktop Support
+
+**Important:** Before building, you need to enable Linux desktop support for your Flutter project.
+
+**On Raspberry Pi (via SSH):**
+```bash
+# Navigate to your project
+cd ~/RaPiBot
+
+# Enable Linux desktop support (creates linux/ folder and necessary files)
+flutter create --platforms=linux .
+
+# If you get a warning about overwriting files, type 'y' to confirm
+```
+
+**Verify Linux support is enabled:**
+```bash
+# Check if linux/ folder was created
+ls -la linux/
+
+# You should see files like:
+# - CMakeLists.txt
+# - main.cpp
+# - my_application.cc
+# - flutter/ directory
+```
+
+**If you get "No Linux desktop project configured" error:**
+- This means Linux support isn't enabled yet
+- Run `flutter create --platforms=linux .` from your project directory
+- Then try building again
+
+### Step 8: Build Your App
 
 **Option A: Build on Raspberry Pi (Simpler, but slower)**
 
@@ -787,7 +867,157 @@ scp -r build\linux\arm64\release\bundle pi@192.168.1.100:~/photobooth-app
 
 **Note:** Cross-compilation from Windows to ARM64 Linux may require additional setup. Building on Pi is recommended for simplicity.
 
-### Step 8: Deploy in Kiosk Mode
+### Step 9: Install Required Dependencies for App Runtime
+
+**Before testing, install all required dependencies for video playback and graphics:**
+
+```bash
+# Install all dependencies needed for Flutter apps on Raspberry Pi
+sudo apt update
+sudo apt install -y \
+  # Video playback (GStreamer) - REQUIRED for video_player plugin
+  gstreamer1.0-tools \
+  gstreamer1.0-plugins-base \
+  gstreamer1.0-plugins-good \
+  gstreamer1.0-plugins-bad \
+  gstreamer1.0-plugins-ugly \
+  gstreamer1.0-libav \
+  libgstreamer1.0-dev \
+  libgstreamer-plugins-base1.0-dev \
+  # Video codecs
+  libavcodec-dev libavformat-dev libavutil-dev \
+  libswscale-dev libswresample-dev \
+  # Graphics/OpenGL - REQUIRED for EGL support
+  libgl1-mesa-dev libegl1-mesa-dev \
+  libgles2-mesa-dev libglu1-mesa-dev \
+  libgbm-dev libdrm-dev
+```
+
+**Verify installations:**
+```bash
+# Check GStreamer
+gst-launch-1.0 --version
+
+# Check OpenGL
+pkg-config --modversion gl
+```
+
+### Step 10: Test Your App (Before Kiosk Mode)
+
+**Before deploying in kiosk mode, test your app to make sure it works:**
+
+**On Raspberry Pi (via SSH or directly on Pi):**
+
+```bash
+cd ~/RaPiBot
+
+# Clean and rebuild (after installing dependencies)
+flutter clean
+flutter pub get
+flutter build linux --release
+
+# Test by running the built binary (more stable than flutter run)
+cd build/linux/arm64/release/bundle
+./rapibot
+```
+
+**Or test with flutter run (with logging):**
+```bash
+cd ~/RaPiBot
+flutter run -d linux --verbose 2>&1 | tee flutter_run.log
+```
+
+**Logging Flutter Run Errors:**
+
+If you encounter errors when running `flutter run`, capture them to a log file:
+
+**Method 1: Save output to file (Recommended)**
+```bash
+# Run flutter and save all output to a log file
+flutter run -d linux 2>&1 | tee flutter_run.log
+
+# Or save to file only (no console output)
+flutter run -d linux > flutter_run.log 2>&1
+```
+
+**Method 2: Verbose logging**
+```bash
+# Run with verbose output and save to file
+flutter run -d linux --verbose 2>&1 | tee flutter_run_verbose.log
+```
+
+**Method 3: Run in background and log**
+```bash
+# Run in background and log everything
+nano ~/run_app.sh
+```
+
+Add this content:
+```bash
+#!/bin/bash
+cd ~/RaPiBot
+flutter run -d linux > flutter_run.log 2>&1
+```
+
+Make executable and run:
+```bash
+chmod +x ~/run_app.sh
+nohup ~/run_app.sh &
+
+# Check the log
+tail -f ~/RaPiBot/flutter_run.log
+
+# To stop, find the process and kill it
+ps aux | grep flutter
+kill <process_id>
+```
+
+**Viewing Logs:**
+```bash
+# View the log file
+cat flutter_run.log
+
+# View last 50 lines (usually where the error is)
+tail -n 50 flutter_run.log
+
+# Follow log in real-time
+tail -f flutter_run.log
+```
+
+**Copy Log from Pi to Windows:**
+```powershell
+# From Windows PowerShell
+scp pi@192.168.1.100:~/RaPiBot/flutter_run.log C:\code\flutter\RaPiBot\
+```
+
+**Common Issues When Running:**
+
+**"No devices found":**
+```bash
+# List available devices
+flutter devices
+
+# Make sure you're running on a device with display
+# For headless Pi, you'll need to build and run the binary directly
+```
+
+**"Display not available":**
+```bash
+# If running via SSH without X11 forwarding, you need a display
+# Either:
+# 1. Connect directly to Pi with monitor/keyboard
+# 2. Use VNC to access desktop
+# 3. Build release version and run the binary
+```
+
+**Run Built Binary Directly:**
+```bash
+# After building, run the binary directly
+cd ~/RaPiBot/build/linux/arm64/release/bundle
+./rapibot
+```
+
+### Step 11: Deploy in Kiosk Mode
 
 **Kiosk mode makes your app run automatically in fullscreen on boot - perfect for a photo booth!**
 
@@ -1034,12 +1264,87 @@ sudo systemctl restart ssh
 
 ### Build Errors
 
+**"No Linux desktop project configured" Error:**
+```bash
+# Enable Linux desktop support first
+cd ~/RaPiBot
+flutter create --platforms=linux .
+
+# Then try building again
+flutter build linux --release
+```
+
 **Missing dependencies:**
 ```bash
 sudo apt update
 sudo apt install -y \
   clang cmake ninja-build pkg-config \
   libgtk-3-dev libblkid-dev liblzma-dev
+```
+
+**"flutter run" Errors - How to Log:**
+```bash
+# Capture all output to log file
+flutter run -d linux --verbose 2>&1 | tee flutter_run_$(date +%Y%m%d_%H%M%S).log
+
+# View the log
+cat flutter_run_*.log
+
+# Or view last 30 lines (where errors usually appear)
+tail -n 30 flutter_run_*.log
+```
+
+**Flutter Doctor Issues:**
+```bash
+# Check Flutter setup and log results
+flutter doctor -v > flutter_doctor.log 2>&1
+cat flutter_doctor.log
+```
+
+**Common Runtime Errors Summary:**
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `UnimplementedError: init() has not been implemented` | Video player plugin missing Linux dependencies | Install GStreamer and codecs (see above) |
+| `MissingPluginException` (permissions) | Permission handler not fully supported on Linux | **EXPECTED** - App uses mock voice mode (this is correct behavior) |
+| `Real voice services failed to initialize` | Permission handler not available on Linux | **EXPECTED** - App automatically uses mock voice (this is correct) |
+| `No provider of eglCreateImage found` | Missing OpenGL/EGL libraries | Install `libgl1-mesa-dev`, `libegl1-mesa-dev`, `libgbm-dev` |
+| `Lost connection to device` | App crashed | Check logs, install missing dependencies, try release mode |
+
+**Complete Dependency Installation (Fix All Common Errors):**
+
+Run this to install all dependencies needed for Flutter apps on Raspberry Pi:
+
+```bash
+sudo apt update
+sudo apt install -y \
+  # Build tools
+  clang cmake ninja-build pkg-config \
+  # GTK and X11
+  libgtk-3-dev libx11-dev libxrandr-dev libxinerama-dev \
+  libxcursor-dev libxi-dev libxext-dev \
+  # Video playback (GStreamer)
+  gstreamer1.0-tools \
+  gstreamer1.0-plugins-base \
+  gstreamer1.0-plugins-good \
+  gstreamer1.0-plugins-bad \
+  gstreamer1.0-plugins-ugly \
+  gstreamer1.0-libav \
+  libgstreamer1.0-dev \
+  libgstreamer-plugins-base1.0-dev \
+  # Video codecs
+  libavcodec-dev libavformat-dev libavutil-dev \
+  libswscale-dev libswresample-dev \
+  # Graphics/OpenGL
+  libgl1-mesa-dev libegl1-mesa-dev \
+  libgles2-mesa-dev libglu1-mesa-dev \
+  libgbm-dev libdrm-dev
+
+# Rebuild after installing
+cd ~/RaPiBot
+flutter clean
+flutter pub get
+flutter build linux --release
 ```
 
 **Out of memory:**
@@ -1051,22 +1356,219 @@ sudo mkswap /swapfile
 sudo swapon /swapfile
 ```
 
-### Video Playback Issues
+### Runtime Errors (When Running `flutter run`)
 
-**Videos not playing:**
+**"UnimplementedError: init() has not been implemented" (Video Player):**
+
+This error means the `video_player` plugin doesn't have full Linux implementation. Install required dependencies:
+
 ```bash
-# Install codecs
+# Install GStreamer and codecs (required for video playback on Linux)
+sudo apt update
 sudo apt install -y \
-  libavcodec-dev libavformat-dev \
-  libavutil-dev libswscale-dev
-
-# Install GStreamer
-sudo apt install -y \
+  gstreamer1.0-tools \
   gstreamer1.0-plugins-base \
   gstreamer1.0-plugins-good \
   gstreamer1.0-plugins-bad \
-  gstreamer1.0-libav
+  gstreamer1.0-plugins-ugly \
+  gstreamer1.0-libav \
+  libgstreamer1.0-dev \
+  libgstreamer-plugins-base1.0-dev
+
+# Install video codecs
+sudo apt install -y \
+  libavcodec-dev \
+  libavformat-dev \
+  libavutil-dev \
+  libswscale-dev \
+  libswresample-dev
+
+# Rebuild the app after installing dependencies
+cd ~/RaPiBot
+flutter clean
+flutter pub get
+flutter build linux --release
 ```
+
+**"MissingPluginException" (Permissions Plugin) / "Real voice services failed to initialize":**
+
+**This is EXPECTED and NOT an error!** The `permission_handler` plugin doesn't work fully on Linux, so the app automatically falls back to **mock voice mode**. This is the intended behavior.
+
+**What this means:**
+- ✅ The app detected that real voice isn't available
+- ✅ It automatically switched to mock voice mode
+- ✅ The app will work perfectly with the orange mock voice panel
+- ✅ You can test all voice commands using the mock panel
+
+**To verify mock voice is working:**
+- Look for the orange mock voice panel button (bottom-left of screen)
+- Click it to open the command panel
+- Try commands like "start pomodoro for 25 minutes"
+- The app should respond with TTS and execute the command
+
+**This error is safe to ignore** - your app is working correctly!
+
+**"No provider of eglCreateImage found. Requires one of: EGL 15" (Graphics/EGL Error):**
+
+This is a graphics/OpenGL issue. The app needs EGL (Embedded Graphics Library) support. Install OpenGL and EGL libraries:
+
+```bash
+# Install OpenGL and EGL libraries (REQUIRED for Flutter on Raspberry Pi)
+sudo apt update
+sudo apt install -y \
+  libgl1-mesa-dev \
+  libegl1-mesa-dev \
+  libgles2-mesa-dev \
+  libglu1-mesa-dev \
+  libgbm-dev \
+  libdrm-dev \
+  mesa-common-dev
+
+# Verify installation
+pkg-config --modversion gl
+pkg-config --modversion egl
+
+# Rebuild after installing
+cd ~/RaPiBot
+flutter clean
+flutter pub get
+flutter build linux --release
+```
+
+**If EGL error persists after installing libraries:**
+
+1. **Check if you're running via SSH without display:**
+   ```bash
+   # Check if DISPLAY is set
+   echo $DISPLAY
+   
+   # If empty, you need to run on Pi directly or use VNC
+   # Or set DISPLAY for X11 forwarding
+   export DISPLAY=:0
+   ```
+
+2. **Try running the built binary directly (more stable):**
+   ```bash
+   cd ~/RaPiBot/build/linux/arm64/release/bundle
+   DISPLAY=:0 ./rapibot
+   ```
+
+3. **Check GPU memory allocation:**
+   ```bash
+   sudo raspi-config
+   # Performance Options → GPU Memory → 128 or 256
+   # Then reboot
+   sudo reboot
+   ```
+
+4. **For Raspberry Pi 5, you may need additional drivers:**
+   ```bash
+   # Update system
+   sudo apt update && sudo apt upgrade -y
+   
+   # Reboot to ensure all drivers are loaded
+   sudo reboot
+   ```
+
+**"Lost connection to device" (App Crashed):**
+
+If the app crashes immediately after starting:
+
+1. **Check logs:**
+   ```bash
+   # Run with verbose logging
+   flutter run -d linux --verbose 2>&1 | tee crash.log
+   
+   # View the crash log
+   tail -n 50 crash.log
+   ```
+
+2. **Check if it's a plugin issue:**
+   ```bash
+   # Try running in release mode (more stable)
+   flutter run -d linux --release
+   ```
+
+3. **Check system resources:**
+   ```bash
+   # Check memory
+   free -h
+   
+   # Check disk space
+   df -h
+   
+   # Check if display is available
+   echo $DISPLAY
+   ```
+
+4. **Run the built binary directly:**
+   ```bash
+   # Build first
+   flutter build linux --release
+   
+   # Run the binary directly (more stable than flutter run)
+   cd ~/RaPiBot/build/linux/arm64/release/bundle
+   ./rapibot
+   ```
+
+### Video Playback Issues
+
+**Videos not playing or "init() not implemented" error:**
+
+**Step 1: Install GStreamer (Required for video_player on Linux)**
+```bash
+sudo apt update
+sudo apt install -y \
+  gstreamer1.0-tools \
+  gstreamer1.0-plugins-base \
+  gstreamer1.0-plugins-good \
+  gstreamer1.0-plugins-bad \
+  gstreamer1.0-plugins-ugly \
+  gstreamer1.0-libav \
+  libgstreamer1.0-dev \
+  libgstreamer-plugins-base1.0-dev
+```
+
+**Step 2: Install Video Codecs**
+```bash
+sudo apt install -y \
+  libavcodec-dev \
+  libavformat-dev \
+  libavutil-dev \
+  libswscale-dev \
+  libswresample-dev
+```
+
+**Step 3: Verify GStreamer Installation**
+```bash
+# Test GStreamer
+gst-launch-1.0 --version
+
+# Test video playback capability
+gst-inspect-1.0 playbin
+```
+
+**Step 4: Rebuild App**
+```bash
+cd ~/RaPiBot
+flutter clean
+flutter pub get
+flutter build linux --release
+```
+
+**Step 5: Test Video Playback**
+```bash
+# Run the built app
+cd ~/RaPiBot/build/linux/arm64/release/bundle
+./rapibot
+```
+
+**If videos still don't play:**
+
+- The app will show an error icon instead of video (this is expected)
+- The app should still function (timer, voice commands, etc.)
+- Videos may work in release mode but not debug mode
+- Consider using static images or animations instead of videos for Raspberry Pi
 
 ### Display Issues
 
@@ -1153,8 +1655,17 @@ git push
 # On Pi
 ssh pi@192.168.1.100
 cd ~/RaPiBot
+
+# Pull latest changes
 git pull
+
+# Get updated dependencies
+flutter pub get
+
+# Rebuild app
 flutter build linux --release
+
+# Restart service
 sudo systemctl restart photobooth.service
 ```
 
@@ -1169,9 +1680,13 @@ Add:
 ```bash
 #!/bin/bash
 cd ~/RaPiBot
+echo "Pulling latest changes..."
 git pull
+echo "Getting dependencies..."
 flutter pub get
+echo "Building app..."
 flutter build linux --release
+echo "Restarting service..."
 sudo systemctl restart photobooth.service
 echo "Photo booth updated!"
 ```
@@ -1266,8 +1781,15 @@ sudo raspi-config
 - [ ] SnappX installer installed
 - [ ] `snapp_installer doctor` passes
 - [ ] Flutter environment installed
-- [ ] App built successfully
-- [ ] Videos copied to assets folder
+- [ ] `source ~/.bashrc` run after Flutter installation
+- [ ] Flutter verified with `flutter --version` and `flutter doctor`
+- [ ] Project cloned/transferred to Raspberry Pi
+- [ ] Linux desktop support enabled (`flutter create --platforms=linux .`)
+- [ ] Runtime dependencies installed (GStreamer, OpenGL libraries)
+- [ ] Dependencies installed (`flutter pub get`)
+- [ ] App built successfully (`flutter build linux --release`)
+- [ ] App tested and runs without crashes
+- [ ] Videos copied to assets folder (or app works without videos)
 
 ### Kiosk Setup
 - [ ] Kiosk mode enabled
@@ -1303,10 +1825,22 @@ source ~/.bashrc  # Required after install
 flutter --version
 flutter doctor
 
+# Enable Linux Desktop Support (if not already done)
+cd ~/RaPiBot
+flutter create --platforms=linux .
+
+# Install Runtime Dependencies (REQUIRED)
+sudo apt install -y gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+  gstreamer1.0-libav libgl1-mesa-dev libegl1-mesa-dev
+
 # Build Your App
 cd ~/RaPiBot
 flutter pub get
 flutter build linux --release
+
+# Test Your App (optional, before kiosk mode)
+cd build/linux/arm64/release/bundle
+./rapibot
 
 # Deploy in Kiosk Mode
 snapp_installer kiosk /home/pi/RaPiBot/build/linux/arm64/release/bundle/rapibot

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../services/sensor_service.dart';
 import '../services/calendar_service.dart';
-import '../services/voice_service.dart';
+// import '../services/voice_service.dart'; // Disabled - using mock voice only for Linux compatibility
 import '../services/mock_voice_service.dart';
 import '../services/intent_service.dart';
 import '../services/voice_command_handler.dart';
@@ -29,13 +29,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _timerCountdown;
   final Set<String> _shownEventIds = {};
   
-  // Voice services
-  VoiceService? _voiceService;
+  // Voice services (using mock voice only for Linux compatibility)
+  // VoiceService removed - not compatible with Linux (permission_handler doesn't work)
   MockVoiceService? _mockVoiceService;
   late IntentService _intentService;
   late VoiceCommandHandler _commandHandler;
   bool _voiceInitialized = false;
-  bool _useMockVoice = false; // ✅ ENABLED: Now using real TTS with audio output!
 
   @override
   void initState() {
@@ -65,12 +64,8 @@ class _HomeScreenState extends State<HomeScreen> {
             appState.showMeetingNotification(event);
             
             // Announce meeting via voice
-            if (_voiceInitialized) {
-              if (_useMockVoice) {
-                _mockVoiceService?.speak('You have an upcoming meeting: ${event['summary']}');
-              } else {
-                _voiceService?.speak('You have an upcoming meeting: ${event['summary']}');
-              }
+            if (_voiceInitialized && _mockVoiceService != null) {
+              _mockVoiceService!.speak('You have an upcoming meeting: ${event['summary']}');
             }
             
             // Clear old event IDs after 20 minutes to prevent memory leak
@@ -84,91 +79,53 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
   
-  /// Initialize voice services (real or mock)
+  /// Initialize voice services (mock voice only - Linux compatible)
   Future<void> _initializeVoiceServices() async {
     final appState = context.read<AppState>();
     _intentService = IntentService();
     
-    if (_useMockVoice) {
-      // Use mock voice service for testing
-      _mockVoiceService = MockVoiceService();
-      
-      _commandHandler = VoiceCommandHandler(
-        appState: appState,
-        voiceService: _mockVoiceService!,
-        intentService: _intentService,
-      );
-      
-      // ⚠️ CRITICAL: Setup callbacks BEFORE initialize() is called
-      // This ensures welcome messages trigger speaking animation
-      debugPrint('[HomeScreen] Setting up mock voice callbacks...');
-      
-      _mockVoiceService!.onListeningStateChanged = (listening) {
-        debugPrint('[HomeScreen] 🎤 Listening: $listening');
-        appState.setListening(listening);
-      };
-      
-      _mockVoiceService!.onSpeakingStateChanged = (speaking, text) {
-        debugPrint('[HomeScreen] 🗣️ Speaking: $speaking, Text: "$text"');
-        appState.setSpeaking(speaking, text: text);
-      };
-      
-      _mockVoiceService!.onTextRecognized = (text) {
-        debugPrint('[HomeScreen] Mock voice command: $text');
-        _commandHandler.processCommand(text);
-      };
-      
-      _mockVoiceService!.onWakeWordDetected = () {
-        debugPrint('[HomeScreen] Mock wake word detected!');
-        _mockVoiceService!.speak('Yes, how can I help?');
-      };
-      
-      debugPrint('[HomeScreen] Callbacks set up, now initializing...');
-      
-      // Initialize mock service (will trigger welcome messages)
-      _voiceInitialized = await _mockVoiceService!.initialize();
-      
-      if (_voiceInitialized) {
-        debugPrint('[HomeScreen] ✅ Mock voice service initialized');
-      }
+    // Always use mock voice service (Linux compatible, no permissions needed)
+    _mockVoiceService = MockVoiceService();
+    
+    _commandHandler = VoiceCommandHandler(
+      appState: appState,
+      voiceService: _mockVoiceService!,
+      intentService: _intentService,
+    );
+    
+    // ⚠️ CRITICAL: Setup callbacks BEFORE initialize() is called
+    // This ensures welcome messages trigger speaking animation
+    debugPrint('[HomeScreen] Setting up mock voice callbacks...');
+    
+    _mockVoiceService!.onListeningStateChanged = (listening) {
+      debugPrint('[HomeScreen] 🎤 Listening: $listening');
+      appState.setListening(listening);
+    };
+    
+    _mockVoiceService!.onSpeakingStateChanged = (speaking, text) {
+      debugPrint('[HomeScreen] 🗣️ Speaking: $speaking, Text: "$text"');
+      appState.setSpeaking(speaking, text: text);
+    };
+    
+    _mockVoiceService!.onTextRecognized = (text) {
+      debugPrint('[HomeScreen] Mock voice command: $text');
+      _commandHandler.processCommand(text);
+    };
+    
+    _mockVoiceService!.onWakeWordDetected = () {
+      debugPrint('[HomeScreen] Mock wake word detected!');
+      _mockVoiceService!.speak('Yes, how can I help?');
+    };
+    
+    debugPrint('[HomeScreen] Callbacks set up, now initializing...');
+    
+    // Initialize mock service (will trigger welcome messages)
+    _voiceInitialized = await _mockVoiceService!.initialize();
+    
+    if (_voiceInitialized) {
+      debugPrint('[HomeScreen] ✅ Mock voice service initialized');
     } else {
-      // Use real voice service
-      _voiceService = VoiceService();
-      
-      _commandHandler = VoiceCommandHandler(
-        appState: appState,
-        voiceService: _voiceService!,
-        intentService: _intentService,
-      );
-      
-      // Setup callbacks for real service
-      _voiceService!.onListeningStateChanged = (listening) {
-        appState.setListening(listening);
-      };
-      
-      _voiceService!.onSpeakingStateChanged = (speaking, text) {
-        appState.setSpeaking(speaking, text: text);
-      };
-      
-      _voiceService!.onTextRecognized = (text) {
-        debugPrint('[HomeScreen] Voice command: $text');
-        _commandHandler.processCommand(text);
-      };
-      
-      _voiceService!.onWakeWordDetected = () {
-        debugPrint('[HomeScreen] Wake word detected!');
-        _voiceService!.speak('Yes, how can I help?');
-      };
-      
-      // Initialize real service
-      _voiceInitialized = await _voiceService!.initialize();
-      
-      if (_voiceInitialized) {
-        debugPrint('[HomeScreen] Real voice services initialized');
-        _voiceService!.enableWakeWordDetection();
-      } else {
-        debugPrint('[HomeScreen] Real voice services failed to initialize');
-      }
+      debugPrint('[HomeScreen] ❌ Mock voice service failed to initialize');
     }
   }
 
@@ -194,24 +151,16 @@ class _HomeScreenState extends State<HomeScreen> {
     _sensorSubscription?.cancel();
     _calendarSubscription?.cancel();
     _timerCountdown?.cancel();
-    if (_voiceInitialized) {
-      if (_useMockVoice) {
-        _mockVoiceService?.dispose();
-      } else {
-        _voiceService?.dispose();
-      }
+    if (_voiceInitialized && _mockVoiceService != null) {
+      _mockVoiceService!.dispose();
     }
     super.dispose();
   }
   
   /// Manually trigger voice listening
   void _startVoiceListening() {
-    if (_voiceInitialized) {
-      if (_useMockVoice) {
-        _mockVoiceService?.startListening();
-      } else {
-        _voiceService?.startListening();
-      }
+    if (_voiceInitialized && _mockVoiceService != null) {
+      _mockVoiceService!.startListening();
     }
   }
 
@@ -338,8 +287,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             
-            // Mock voice panel (only show if using mock service)
-            if (_useMockVoice && _mockVoiceService != null && _voiceInitialized)
+            // Mock voice panel (always show since we're using mock voice only)
+            if (_mockVoiceService != null && _voiceInitialized)
               MockVoicePanel(mockVoiceService: _mockVoiceService!),
           ],
         ),
