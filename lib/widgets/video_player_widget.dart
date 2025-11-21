@@ -32,25 +32,23 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     if (kIsWeb) {
       // For web, use network URL
       // widget.videoPath is "assets/animations/blink.mp4"
-      // Flutter web on Raspberry Pi copies to build/web/assets/assets/animations/ (double assets!)
-      // So URL must be "/assets/assets/animations/blink.mp4" to match actual build output
+      // Flutter web copies to build/web/assets/animations/ (single assets)
+      // So URL should be "/assets/animations/blink.mp4"
       final baseUrl = Uri.base.origin;
       
       // Remove any leading slash from videoSource
       videoSource = videoSource.replaceFirst(RegExp(r'^/'), '');
       
-      // Flutter web duplicates "assets/" prefix on some platforms
+      // For web, Flutter serves assets from /assets/ root
       // videoSource is "assets/animations/blink.mp4"
-      // Build output is at: build/web/assets/assets/animations/blink.mp4
-      // So URL needs: /assets/assets/animations/blink.mp4
-      // We add an extra "assets/" prefix to match the build output
-      final fullUrl = '$baseUrl/assets/$videoSource';
+      // URL should be: /assets/animations/blink.mp4 (single assets)
+      final fullUrl = '$baseUrl/$videoSource';
       
       debugPrint('[VideoPlayer] Web: Original path: ${widget.videoPath}');
       debugPrint('[VideoPlayer] Web: Base URL: $baseUrl');
       debugPrint('[VideoPlayer] Web: Video source: $videoSource');
       debugPrint('[VideoPlayer] Web: Using network URL: $fullUrl');
-      debugPrint('[VideoPlayer] Web: Expected file location: build/web/assets/$videoSource');
+      debugPrint('[VideoPlayer] Web: Expected file location: build/web/$videoSource');
       _controller = VideoPlayerController.networkUrl(Uri.parse(fullUrl));
     } else {
       // For native platforms, use asset controller
@@ -118,8 +116,8 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         // Remove any leading slash from videoSource
         videoSource = videoSource.replaceFirst(RegExp(r'^/'), '');
         
-        // Flutter web duplicates "assets/" prefix, so add it to match build output
-        final fullUrl = '$baseUrl/assets/$videoSource';
+        // For web, Flutter serves assets from /assets/ root (single assets)
+        final fullUrl = '$baseUrl/$videoSource';
         
         _controller = VideoPlayerController.networkUrl(Uri.parse(fullUrl));
       } else {

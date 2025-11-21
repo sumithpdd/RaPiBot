@@ -28,4 +28,8 @@ flutter:
   uses-material-design: true
   
   assets:
-    - assets/animations/
+    - assets/animations/blink.mp4
+    - assets/animations/speaking.mp4
+    - assets/animations/yellow.mp4
+    - assets/animations/red.mp4
+    - assets/animations/black.mp4

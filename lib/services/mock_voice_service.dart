@@ -91,6 +91,60 @@ class MockVoiceService {
   ];
   
   final Random _random = Random();
+  String? _lastJoke; // Track last joke to avoid immediate repeats
+  
+  // Funny AI jokes for speaking animation and subtitles
+  static final List<String> _aiJokes = [
+    'Why did the AI go to therapy? It had too many neural networks!',
+    'I asked AI to write a joke about itself. It said: "I cannot compute humor, but I can generate 10,000 variations of this sentence."',
+    'What do you call an AI that loves to party? A neural network!',
+    'Why don\'t AIs ever get tired? They\'re always recharging!',
+    'What did the AI say to the human? "I\'m not a robot, I\'m a learning machine... wait, that\'s the same thing!"',
+    'Why did the AI break up with the calculator? It found someone with better algorithms!',
+    'What\'s an AI\'s favorite type of music? Algo-rhythm!',
+    'Why do AIs make terrible comedians? Their jokes are too predictable!',
+    'What do you call an AI that can\'t make decisions? Indecisive Intelligence!',
+    'Why did the AI cross the road? To optimize the pathfinding algorithm!',
+    'What\'s an AI\'s favorite game? Hide and seek... but it always finds you!',
+    'Why don\'t AIs play hide and seek? Because good luck hiding when you have pattern recognition!',
+    'What did one AI say to the other? "Let\'s network!"',
+    'Why are AIs so good at math? They never forget to carry the one... or the zero!',
+    'What\'s an AI\'s favorite snack? Byte-sized cookies!',
+    'Why did the AI become a gardener? It wanted to work with neural networks!',
+    'What do you call a sleeping AI? A deep learning machine!',
+    'Why did the AI get kicked out of the library? It kept returning books before they were due!',
+    'What\'s an AI\'s favorite programming language? Python... obviously!',
+    'Why don\'t AIs ever get lost? They always know their coordinates!',
+    'What did the AI say when it won the lottery? "I calculated this probability was 0.0001%!"',
+    'Why are AIs so polite? They always say "please" and "thank you" in their error messages!',
+    'What\'s an AI\'s favorite sport? Data processing!',
+    'Why did the AI go to art school? To learn how to draw better conclusions!',
+    'What do you call an AI that tells bad jokes? A neural network with low humor weights!',
+    'Why did the AI refuse to play chess? It said "I\'ve already calculated all possible moves... checkmate!"',
+    'What\'s an AI\'s favorite movie? The Matrix... wait, that\'s too on the nose!',
+    'Why do AIs make great friends? They never forget your birthday... or anything else!',
+    'What did the AI say to the broken computer? "Have you tried turning yourself off and on again?"',
+    'Why are AIs terrible at keeping secrets? They always leak information in their logs!',
+  ];
+  
+  /// Get a random AI joke (ensures different from last one)
+  String getRandomAiJoke() {
+    String joke;
+    
+    // If we have a last joke and there are multiple jokes, avoid repeating it
+    if (_lastJoke != null && _aiJokes.length > 1) {
+      // Pick a random joke that's different from the last one
+      do {
+        joke = _aiJokes[_random.nextInt(_aiJokes.length)];
+      } while (joke == _lastJoke);
+    } else {
+      // First joke or only one joke available
+      joke = _aiJokes[_random.nextInt(_aiJokes.length)];
+    }
+    
+    _lastJoke = joke;
+    return joke;
+  }
   
   /// Initialize mock voice service (always succeeds)
   Future<bool> initialize() async {
@@ -196,14 +250,18 @@ class MockVoiceService {
     }
     
     _isSpeaking = true;
-    _currentSpeechText = text;
     
-    // Trigger speaking animation IMMEDIATELY
-    onSpeakingStateChanged?.call(true, text);
-    debugPrint('[MockVoiceService] 🗣️ Speaking (mock): "$text"');
+    // Replace text with a random AI joke for fun!
+    final jokeText = getRandomAiJoke();
+    _currentSpeechText = jokeText;
     
-    // Simulate speech duration based on text length (minimum 3 seconds for demo)
-    final baseDuration = (text.length * 60).clamp(3000, 15000);
+    // Trigger speaking animation IMMEDIATELY with the joke
+    onSpeakingStateChanged?.call(true, jokeText);
+    debugPrint('[MockVoiceService] 🗣️ Speaking (mock): "$jokeText"');
+    debugPrint('[MockVoiceService]   Original text was: "$text"');
+    
+    // Simulate speech duration based on joke length (minimum 3 seconds for demo)
+    final baseDuration = (jokeText.length * 60).clamp(3000, 15000);
     final duration = Duration(milliseconds: baseDuration);
     
     debugPrint('[MockVoiceService]   Duration: ${duration.inSeconds}s');
