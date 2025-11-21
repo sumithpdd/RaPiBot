@@ -869,12 +869,36 @@ scp -r build\linux\arm64\release\bundle pi@192.168.1.100:~/photobooth-app
 
 ### Step 9: Install Required Dependencies for App Runtime
 
-**Before testing, install all required dependencies for video playback and graphics:**
+**Before testing, install all required dependencies for video playback and graphics on Raspberry Pi:**
+
+**Option 1: Use the installation script (Recommended)**
+
+```bash
+# Copy the script to your Raspberry Pi
+# From Windows, you can use SCP:
+# scp install_dependencies.sh pi@192.168.1.100:~/RaPiBot/
+
+# Or create it directly on Pi:
+cd ~/RaPiBot
+nano install_dependencies.sh
+# Paste the script content (see below), then save (Ctrl+X, Y, Enter)
+
+# Make it executable and run
+chmod +x install_dependencies.sh
+./install_dependencies.sh
+```
+
+**Option 2: Install manually**
 
 ```bash
 # Install all dependencies needed for Flutter apps on Raspberry Pi
 sudo apt update
 sudo apt install -y \
+  # Build tools
+  clang cmake ninja-build pkg-config \
+  libgtk-3-dev libx11-dev libxrandr-dev libxinerama-dev \
+  libxcursor-dev libxi-dev libxext-dev \
+  libblkid-dev liblzma-dev \
   # Video playback (GStreamer) - REQUIRED for video_player plugin
   gstreamer1.0-tools \
   gstreamer1.0-plugins-base \
@@ -890,7 +914,8 @@ sudo apt install -y \
   # Graphics/OpenGL - REQUIRED for EGL support
   libgl1-mesa-dev libegl1-mesa-dev \
   libgles2-mesa-dev libglu1-mesa-dev \
-  libgbm-dev libdrm-dev
+  libgbm-dev libdrm-dev \
+  mesa-common-dev
 ```
 
 **Verify installations:**
@@ -900,6 +925,7 @@ gst-launch-1.0 --version
 
 # Check OpenGL
 pkg-config --modversion gl
+pkg-config --modversion egl
 ```
 
 ### Step 10: Test Your App (Before Kiosk Mode)
@@ -1313,32 +1339,31 @@ cat flutter_doctor.log
 
 **Complete Dependency Installation (Fix All Common Errors):**
 
-Run this to install all dependencies needed for Flutter apps on Raspberry Pi:
+**Quick Fix Script (Recommended for Raspberry Pi):**
 
 ```bash
+# On your Raspberry Pi, run:
+cd ~/RaPiBot
+
+# If you have the install_dependencies.sh script:
+chmod +x install_dependencies.sh
+./install_dependencies.sh
+
+# Or install manually:
 sudo apt update
 sudo apt install -y \
-  # Build tools
   clang cmake ninja-build pkg-config \
-  # GTK and X11
   libgtk-3-dev libx11-dev libxrandr-dev libxinerama-dev \
-  libxcursor-dev libxi-dev libxext-dev \
-  # Video playback (GStreamer)
-  gstreamer1.0-tools \
-  gstreamer1.0-plugins-base \
-  gstreamer1.0-plugins-good \
-  gstreamer1.0-plugins-bad \
-  gstreamer1.0-plugins-ugly \
-  gstreamer1.0-libav \
-  libgstreamer1.0-dev \
-  libgstreamer-plugins-base1.0-dev \
-  # Video codecs
+  libxcursor-dev libxi-dev libxext-dev libblkid-dev liblzma-dev \
+  gstreamer1.0-tools gstreamer1.0-plugins-base \
+  gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \
+  gstreamer1.0-plugins-ugly gstreamer1.0-libav \
+  libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
   libavcodec-dev libavformat-dev libavutil-dev \
   libswscale-dev libswresample-dev \
-  # Graphics/OpenGL
   libgl1-mesa-dev libegl1-mesa-dev \
   libgles2-mesa-dev libglu1-mesa-dev \
-  libgbm-dev libdrm-dev
+  libgbm-dev libdrm-dev mesa-common-dev
 
 # Rebuild after installing
 cd ~/RaPiBot
@@ -1346,6 +1371,8 @@ flutter clean
 flutter pub get
 flutter build linux --release
 ```
+
+**Note:** The `install_dependencies.sh` script is included in the project root for easy installation on Raspberry Pi.
 
 **Out of memory:**
 ```bash

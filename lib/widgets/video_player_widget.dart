@@ -24,9 +24,17 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     _currentPath = widget.videoPath;
     _controller = VideoPlayerController.asset(widget.videoPath);
     _initializeVideoPlayerFuture = _controller.initialize().then((_) {
-      _controller.setLooping(true);
-      _controller.play();
-      debugPrint('[VideoPlayer] ✓ Video ready: ${widget.videoPath}');
+      if (mounted) {
+        _controller.setLooping(true);
+        _controller.play();
+        debugPrint('[VideoPlayer] ✓ Video ready: ${widget.videoPath}');
+      }
+    }).catchError((error) {
+      // Handle video initialization errors gracefully (e.g., GStreamer not installed on Linux)
+      debugPrint('[VideoPlayer] ✗ Initialization failed: $error');
+      debugPrint('[VideoPlayer] Note: On Linux, install GStreamer: sudo apt install gstreamer1.0-plugins-base gstreamer1.0-libav');
+      // Re-throw to be caught by FutureBuilder
+      throw error;
     });
   }
 
@@ -45,22 +53,33 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     _currentPath = newPath;
     
     // Pause and dispose old controller
-    _controller.pause();
+    if (_controller.value.isInitialized) {
+      _controller.pause();
+    }
     _controller.dispose();
 
     // Create new controller
     setState(() {
       _controller = VideoPlayerController.asset(newPath);
       _initializeVideoPlayerFuture = _controller.initialize().then((_) {
-        _controller.setLooping(true);
-        _controller.play();
-        debugPrint('[VideoPlayer] ✓ Video ready: $newPath');
+        if (mounted) {
+          _controller.setLooping(true);
+          _controller.play();
+          debugPrint('[VideoPlayer] ✓ Video ready: $newPath');
+        }
+      }).catchError((error) {
+        // Handle video initialization errors gracefully
+        debugPrint('[VideoPlayer] ✗ Failed to switch video: $error');
+        throw error;
       });
     });
   }
 
   @override
   void dispose() {
+    if (_controller.value.isInitialized) {
+      _controller.pause();
+    }
     _controller.dispose();
     super.dispose();
   }
@@ -72,25 +91,43 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
           if (snapshot.hasError) {
-            // Error state
-            debugPrint('[VideoPlayer] ✗ Error: ${snapshot.error}');
+            // Error state - video player not available (e.g., GStreamer not installed on Linux)
+            final error = snapshot.error;
+            final isUnimplementedError = error.toString().contains('UnimplementedError') ||
+                                        error.toString().contains('init() has not been implemented');
+            
+            // Only log non-expected errors
+            if (!isUnimplementedError) {
+              debugPrint('[VideoPlayer] ✗ Error: $error');
+            }
+            
             return Container(
               color: Colors.black,
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                    const Icon(Icons.videocam_off, size: 64, color: Colors.orange),
                     const SizedBox(height: 16),
                     const Text(
-                      'Video failed to load',
+                      'Video playback not available',
                       style: TextStyle(color: Colors.white70, fontSize: 16),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      _currentPath.split('/').last,
-                      style: const TextStyle(color: Colors.white38, fontSize: 12),
-                    ),
+                    if (isUnimplementedError)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 32.0),
+                        child: Text(
+                          'Install GStreamer on Linux:\nsudo apt install gstreamer1.0-plugins-base gstreamer1.0-libav',
+                          style: TextStyle(color: Colors.white54, fontSize: 12),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                    else
+                      Text(
+                        _currentPath.split('/').last,
+                        style: const TextStyle(color: Colors.white38, fontSize: 12),
+                      ),
                   ],
                 ),
               ),
