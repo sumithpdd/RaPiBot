@@ -1989,6 +1989,43 @@ python3 -m http.server 8081  # Use different port
 - Check Chromium console: Press F12 in kiosk mode (if possible)
 - View server logs: `cat /tmp/rapibot_web_server.log`
 
+**"Video playback not available" on web:**
+
+1. **Verify video files are in build output:**
+   ```bash
+   ls -lh ~/RaPiBot/build/web/assets/animations/*.mp4
+   ```
+   If files are missing, they need to be copied to the build directory.
+
+2. **Check browser console for errors:**
+   - Open Chromium DevTools (if possible in kiosk: Alt+Shift+I)
+   - Look for 404 errors or CORS issues
+   - Check Network tab for video file requests
+
+3. **Ensure assets are included in build:**
+   ```bash
+   cd ~/RaPiBot
+   # Rebuild with explicit asset inclusion
+   flutter clean
+   flutter pub get
+   flutter build web --release --web-renderer html
+   ```
+
+4. **Verify video files exist in source:**
+   ```bash
+   ls -lh ~/RaPiBot/assets/animations/*.mp4
+   ```
+   If missing, download from the original project or the app will work without videos.
+
+5. **Test video URL directly:**
+   ```bash
+   # While web server is running
+   curl http://localhost:8080/assets/animations/blink.mp4
+   ```
+   Should return video data, not 404.
+
+**Note:** The app works perfectly without videos - it will show "Video playback not available" but all other features (timer, voice commands, notifications) will function normally.
+
 ---
 
 [← Back to Documentation](README.md) | [Setup Guide →](SETUP.md) | [Development →](DEVELOPMENT.md)

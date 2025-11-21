@@ -25,7 +25,17 @@ flutter pub get
 # Build for web
 echo ""
 echo "🔨 Building web release..."
-flutter build web --release
+flutter build web --release --web-renderer html
+
+# Verify assets were copied
+echo ""
+echo "📦 Verifying assets..."
+if [ -d "build/web/assets/animations" ]; then
+    echo "✅ Video assets found in build/web/assets/animations/"
+    ls -lh build/web/assets/animations/*.mp4 2>/dev/null || echo "⚠️  No .mp4 files found (app will work but show 'Video playback not available')"
+else
+    echo "⚠️  Assets directory not found - videos may not work"
+fi
 
 if [ $? -eq 0 ]; then
     echo ""

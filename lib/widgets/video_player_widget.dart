@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
@@ -22,7 +23,28 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   void initState() {
     super.initState();
     _currentPath = widget.videoPath;
-    _controller = VideoPlayerController.asset(widget.videoPath);
+    _initializeVideoPlayer();
+  }
+
+  void _initializeVideoPlayer() {
+    // On web, assets need to be served via HTTP
+    // Convert asset path to network URL for web
+    String videoSource = widget.videoPath;
+    
+    if (kIsWeb) {
+      // For web, assets are served from the root
+      // Remove 'assets/' prefix and use as network URL
+      videoSource = videoSource.replaceFirst('assets/', '');
+      // Use network URL (assuming server is running on same host)
+      final baseUrl = Uri.base.origin;
+      videoSource = '$baseUrl/$videoSource';
+      debugPrint('[VideoPlayer] Web: Using network URL: $videoSource');
+      _controller = VideoPlayerController.networkUrl(Uri.parse(videoSource));
+    } else {
+      // For native platforms, use asset controller
+      _controller = VideoPlayerController.asset(widget.videoPath);
+    }
+
     _initializeVideoPlayerFuture = _controller.initialize().then((_) {
       if (mounted) {
         _controller.setLooping(true);
@@ -30,9 +52,14 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         debugPrint('[VideoPlayer] ✓ Video ready: ${widget.videoPath}');
       }
     }).catchError((error) {
-      // Handle video initialization errors gracefully (e.g., GStreamer not installed on Linux)
+      // Handle video initialization errors gracefully
       debugPrint('[VideoPlayer] ✗ Initialization failed: $error');
-      debugPrint('[VideoPlayer] Note: On Linux, install GStreamer: sudo apt install gstreamer1.0-plugins-base gstreamer1.0-libav');
+      if (kIsWeb) {
+        debugPrint('[VideoPlayer] Web: Make sure video files are in build/web/assets/animations/');
+        debugPrint('[VideoPlayer] Web: Check browser console for CORS or 404 errors');
+      } else {
+        debugPrint('[VideoPlayer] Note: On Linux, install GStreamer: sudo apt install gstreamer1.0-plugins-base gstreamer1.0-libav');
+      }
       // Re-throw to be caught by FutureBuilder
       throw error;
     });
@@ -58,9 +85,20 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     }
     _controller.dispose();
 
-    // Create new controller
+    // Create new controller (handle web vs native)
     setState(() {
-      _controller = VideoPlayerController.asset(newPath);
+      String videoSource = newPath;
+      
+      if (kIsWeb) {
+        // For web, convert asset path to network URL
+        videoSource = videoSource.replaceFirst('assets/', '');
+        final baseUrl = Uri.base.origin;
+        videoSource = '$baseUrl/$videoSource';
+        _controller = VideoPlayerController.networkUrl(Uri.parse(videoSource));
+      } else {
+        _controller = VideoPlayerController.asset(newPath);
+      }
+      
       _initializeVideoPlayerFuture = _controller.initialize().then((_) {
         if (mounted) {
           _controller.setLooping(true);
@@ -114,7 +152,16 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                       style: TextStyle(color: Colors.white70, fontSize: 16),
                     ),
                     const SizedBox(height: 8),
-                    if (isUnimplementedError)
+                    if (kIsWeb)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 32.0),
+                        child: Text(
+                          'Web: Ensure video files are in build/web/assets/animations/\nCheck browser console for errors',
+                          style: TextStyle(color: Colors.white54, fontSize: 12),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                    else if (isUnimplementedError)
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 32.0),
                         child: Text(
