@@ -25,7 +25,7 @@ flutter pub get
 # Build for web
 echo ""
 echo "🔨 Building web release..."
-flutter build web --release --web-renderer html
+flutter build web --release
 
 # Verify assets were copied
 echo ""

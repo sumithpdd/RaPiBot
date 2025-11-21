@@ -2033,7 +2033,7 @@ python3 -m http.server 8081  # Use different port
    # Rebuild with explicit asset inclusion
    flutter clean
    flutter pub get
-   flutter build web --release --web-renderer html
+   flutter build web --release
    ```
 
 4. **Verify video files exist in source:**
