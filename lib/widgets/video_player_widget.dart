@@ -30,14 +30,21 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     String videoSource = widget.videoPath;
     
     if (kIsWeb) {
-      // For web, use network URL since direct URL works
-      // Path should be /assets/animations/blink.mp4 (with leading slash)
+      // For web, use network URL
+      // widget.videoPath is "assets/animations/blink.mp4"
+      // On web, files are served from root, so URL should be "/assets/animations/blink.mp4"
       final baseUrl = Uri.base.origin;
-      // Ensure path starts with / for absolute path
-      if (!videoSource.startsWith('/')) {
-        videoSource = '/$videoSource';
-      }
-      final fullUrl = '$baseUrl$videoSource';
+      
+      // Remove any leading slash from videoSource to avoid double slashes
+      videoSource = videoSource.replaceFirst(RegExp(r'^/'), '');
+      
+      // Always construct as: baseUrl + / + videoSource
+      // This ensures we get: http://localhost:8080/assets/animations/blink.mp4
+      final fullUrl = '$baseUrl/$videoSource';
+      
+      debugPrint('[VideoPlayer] Web: Original path: ${widget.videoPath}');
+      debugPrint('[VideoPlayer] Web: Base URL: $baseUrl');
+      debugPrint('[VideoPlayer] Web: Video source: $videoSource');
       debugPrint('[VideoPlayer] Web: Using network URL: $fullUrl');
       _controller = VideoPlayerController.networkUrl(Uri.parse(fullUrl));
     } else {
@@ -60,9 +67,11 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       debugPrint('[VideoPlayer] Platform: ${kIsWeb ? "Web" : "Native"}');
       
       if (kIsWeb) {
+        final expectedUrl = '${Uri.base.origin}/${widget.videoPath}';
         debugPrint('[VideoPlayer] Web: Make sure video files are in build/web/assets/animations/');
         debugPrint('[VideoPlayer] Web: Check browser console for CORS or 404 errors');
-        debugPrint('[VideoPlayer] Web: Expected URL: ${Uri.base.origin}/${widget.videoPath}');
+        debugPrint('[VideoPlayer] Web: Expected URL: $expectedUrl');
+        debugPrint('[VideoPlayer] Web: Actual URL used: ${Uri.base.origin}/${videoSource.replaceFirst(RegExp(r'^/'), '')}');
       } else {
         debugPrint('[VideoPlayer] Native: Check if video file exists in assets/animations/');
         debugPrint('[VideoPlayer] Native: On Linux, install GStreamer: sudo apt install gstreamer1.0-plugins-base gstreamer1.0-libav');
@@ -98,12 +107,15 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       String videoSource = newPath;
       
       if (kIsWeb) {
-        // For web, use network URL with leading slash
+        // For web, use network URL (same logic as initialization)
         final baseUrl = Uri.base.origin;
-        if (!videoSource.startsWith('/')) {
-          videoSource = '/$videoSource';
-        }
-        final fullUrl = '$baseUrl$videoSource';
+        
+        // Remove any leading slash from videoSource
+        videoSource = videoSource.replaceFirst(RegExp(r'^/'), '');
+        
+        // Always construct as: baseUrl + / + videoSource
+        final fullUrl = '$baseUrl/$videoSource';
+        
         _controller = VideoPlayerController.networkUrl(Uri.parse(fullUrl));
       } else {
         _controller = VideoPlayerController.asset(newPath);

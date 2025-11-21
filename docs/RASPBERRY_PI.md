@@ -2014,13 +2014,33 @@ python3 -m http.server 8081  # Use different port
 - Check Chromium console: Press F12 in kiosk mode (if possible)
 - View server logs: `cat /tmp/rapibot_web_server.log`
 
-**"Video playback not available" on web:**
+**"Video playback not available" on web / 404 errors:**
 
-1. **Verify video files are in build output:**
+1. **Run diagnostic script:**
+   ```bash
+   cd ~/RaPiBot
+   chmod +x test_video_path.sh
+   ./test_video_path.sh
+   ```
+
+2. **Verify video files are in build output:**
    ```bash
    ls -lh ~/RaPiBot/build/web/assets/animations/*.mp4
    ```
-   If files are missing, they need to be copied to the build directory.
+   If files are missing, rebuild:
+   ```bash
+   cd ~/RaPiBot
+   flutter clean
+   flutter pub get
+   flutter build web --release
+   ```
+
+3. **Check if files are being served:**
+   ```bash
+   # While server is running
+   curl -I http://localhost:8080/assets/animations/blink.mp4
+   ```
+   Should return HTTP 200, not 404.
 
 2. **Check browser console for errors:**
    - Open Chromium DevTools (if possible in kiosk: Alt+Shift+I)
