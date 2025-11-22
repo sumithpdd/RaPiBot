@@ -1948,11 +1948,21 @@ chmod +x build_web.sh
 ./build_web.sh
 ```
 
-**Step 4: Launch in Kiosk Mode**
+**Step 4: Launch the App**
+
+**Option A: Normal Mode (Recommended for testing)**
+```bash
+chmod +x launch_web.sh
+./launch_web.sh
+```
+Opens Chromium in normal window mode - you can see the browser UI and close it easily.
+
+**Option B: Kiosk Mode (Fullscreen)**
 ```bash
 chmod +x launch_web_kiosk.sh
 ./launch_web_kiosk.sh
 ```
+Opens Chromium in fullscreen kiosk mode - press Alt+F4 or Ctrl+Alt+F4 to exit.
 
 **Step 5: Setup Autostart (Optional)**
 ```bash
@@ -1977,7 +1987,16 @@ cd ~/RaPiBot/build/web
 python3 -m http.server 8080
 ```
 
-**Launch Chromium Kiosk:**
+**Launch Chromium (Normal Mode):**
+```bash
+chromium-browser \
+  --app=http://localhost:8080 \
+  --noerrdialogs \
+  --disable-translate \
+  --autoplay-policy=no-user-gesture-required
+```
+
+**Launch Chromium (Kiosk Mode):**
 ```bash
 chromium-browser \
   --kiosk \

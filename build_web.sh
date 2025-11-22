@@ -84,8 +84,9 @@ if [ $? -eq 0 ]; then
     echo "=========================================="
     echo ""
     echo "Next steps:"
-    echo "1. Run: ./serve_web.sh (to start web server)"
-    echo "2. Or run: ./launch_web_kiosk.sh (to start server + Chromium kiosk)"
+    echo "1. Run: ./serve_web.sh (to start web server only)"
+    echo "2. Run: ./launch_web.sh (to start server + Chromium in normal mode)"
+    echo "3. Run: ./launch_web_kiosk.sh (to start server + Chromium in kiosk mode)"
     echo ""
 else
     echo ""
